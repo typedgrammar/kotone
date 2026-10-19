@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "id": "yoru-ni-kakeru",
+  "title": "夜に駆ける",
+  "titleReading": "よるにかける",
+  "artist": "YOASOBI",
+  "excerpt": true,
+  "source": "作词作曲：Ayase。这里只收录几行用于学习讲解；完整歌词请用自己的 LRC 运行 kotone init --reuse 生成。",
+  "lines": [
+    {
+      "id": "L01",
+      "ja": "沈むように 溶けてゆくように",
+      "zh": "仿佛沉没下去，仿佛渐渐融化一般",
+      "tokens": [
+        { "text": "沈む", "reading": "しずむ", "pos": "verb", "gloss": "沉没、下沉", "lemma": { "text": "沈む", "reading": "しずむ", "class": "godan" } },
+        { "text": "ように", "pos": "aux", "gloss": "像……一样", "lemma": { "text": "よう", "class": "na-adj" }, "steps": ["Adverbial"], "note": "助动词「ようだ」的连用形" },
+        { "text": "溶けて", "reading": "とけて", "pos": "verb", "gloss": "融化", "lemma": { "text": "溶ける", "reading": "とける", "class": "ichidan" }, "steps": ["Te"] },
+        { "text": "ゆく", "pos": "verb", "gloss": "（渐渐）……下去", "lemma": { "text": "ゆく", "class": "godan" }, "note": "补助动词，＝いく" },
+        { "text": "ように", "pos": "aux", "gloss": "像……一样", "lemma": { "text": "よう", "class": "na-adj" }, "steps": ["Adverbial"] }
+      ],
+      "chunks": [
+        { "ja": "沈む", "zh": "沉没下去", "role": "动作", "note": "辞书形直接接ように：比喻的内容是“沉下去”。" },
+        { "ja": "ように", "zh": "仿佛", "role": "比喻", "note": "「ように」＝像……一样地。" },
+        { "ja": "溶けてゆく", "zh": "渐渐融化", "role": "动作", "note": "溶けて＋ゆく：融化这个变化一点点推进下去，中文用“渐渐”表达。" },
+        { "ja": "ように", "zh": ["仿佛", "一般"], "role": "比喻", "note": "第二个ように和前一个并列，中文“仿佛……一般”首尾呼应。" }
+      ],
+      "grammar": [
+        { "id": "you-ni-simile", "ja": "沈むように", "note": "动词辞书形＋ように：像沉没一样地。" },
+        { "id": "verb-dictionary", "ja": "沈む", "note": "辞书形直接接ように，不需要变形。" },
+        { "id": "te-iku", "ja": "溶けてゆく", "note": "て形＋ゆく：变化朝着“消失”的方向逐渐推进。" },
+        { "id": "lyric-yuku", "ja": "ゆく", "note": "ゆく是いく的雅语说法，比いく更柔和、更有余韵。" },
+        { "id": "you-ni-simile", "ja": "溶けてゆくように", "note": "两个「〜ように」并列，像两笔叠加的画面。" }
+      ],
+      "note": "开头两句是并列的比喻，主语和谓语都还没出现，只先给出“下沉、融化”的画面；下一句才交代这是在怎样的夜里。"
+    },
+    {
+      "id": "L02",
+      "ja": "二人だけの空が広がる夜に",
+      "zh": "在只属于我们两个人的天空蔓延开来的夜里",
+      "tokens": [
+        { "text": "二人", "reading": "ふたり", "pos": "noun", "gloss": "两个人", "jlpt": "N5", "note": "一人（ひとり）、二人（ふたり）是特殊读法" },
+        { "text": "だけ", "pos": "particle", "gloss": "只、仅" },
+        { "text": "の", "pos": "particle", "gloss": "的" },
+        { "text": "空", "reading": "そら", "pos": "noun", "gloss": "天空", "jlpt": "N5" },
+        { "text": "が", "pos": "particle", "gloss": "（主语）" },
+        { "text": "広がる", "reading": "ひろがる", "pos": "verb", "gloss": "铺展、蔓延", "lemma": { "text": "広がる", "reading": "ひろがる", "class": "godan" } },
+        { "text": "夜", "reading": "よる", "pos": "noun", "gloss": "夜晚", "jlpt": "N5" },
+        { "text": "に", "pos": "particle", "gloss": "在（时间）" }
+      ],
+      "chunks": [
+        { "ja": "二人だけの", "zh": "只属于我们两个人的", "role": "定语", "note": "二人＋だけ（只）＋の（的）：字面是“只有两个人的”。" },
+        { "ja": "空が", "zh": "天空", "role": "主语", "note": "从句里的主语用が。" },
+        { "ja": "広がる", "zh": "蔓延开来", "role": "谓语", "note": "从句的谓语，用辞书形直接修饰后面的「夜」。" },
+        { "ja": "夜", "zh": "夜里", "role": "中心语" },
+        { "ja": "に", "zh": "在", "role": "时间", "note": "に表示时间点。" }
+      ],
+      "grammar": [
+        { "id": "particle-dake", "ja": "だけ", "note": "二人だけ＝只有两个人；加の之后修饰名词：只属于两人的天空。" },
+        { "id": "particle-no", "ja": "の", "note": "「二人だけ」通过の修饰「空」。" },
+        { "id": "particle-ga", "ja": "空が", "note": "修饰名词的从句里，主语用が而不用は。" },
+        { "id": "relative-clause", "ja": "二人だけの空が広がる夜", "note": "整个「二人だけの空が広がる」修饰「夜」，中文要把这一长串放在“夜里”前面。" },
+        { "id": "verb-dictionary", "ja": "広がる", "note": "辞书形直接作定语。" },
+        { "id": "particle-ni-time", "ja": "夜に", "note": "夜に＝在夜里。歌名「夜に駆ける」也是这个に。" }
+      ],
+      "note": "一整句都是时间状语：[二人だけの空が広がる] 夜 に。日语把很长的定语直接堆在名词前，中文译文也保持了这个顺序。"
+    },
+    {
+      "id": "L03",
+      "ja": "初めて会った日から",
+      "zh": "从初次相遇的那天起",
+      "tokens": [
+        { "text": "初めて", "reading": "はじめて", "pos": "adverb", "gloss": "初次、第一次", "jlpt": "N5" },
+        { "text": "会った", "reading": "あった", "pos": "verb", "gloss": "相遇", "lemma": { "text": "会う", "reading": "あう", "class": "godan" }, "steps": ["Ta"], "jlpt": "N5" },
+        { "text": "日", "reading": "ひ", "pos": "noun", "gloss": "日子；那天", "jlpt": "N5" },
+        { "text": "から", "pos": "particle", "gloss": "从……起" }
+      ],
+      "chunks": [
+        { "ja": "初めて", "zh": "初次", "role": "状语", "note": "副词，修饰会った。" },
+        { "ja": "会った", "zh": "相遇的", "role": "定语", "note": "た形直接放在名词前作定语，表示已经发生的事：相遇（过）的。" },
+        { "ja": "日", "zh": "那天", "role": "中心语" },
+        { "ja": "から", "zh": ["从", "起"], "role": "起点", "note": "から＝从……起，中文要拆成“从”和“起”包住前面的内容。" }
+      ],
+      "grammar": [
+        { "id": "adverbial-modifier", "ja": "初めて会った", "note": "副词初めて修饰动词会った：初次相遇。" },
+        { "id": "relative-clause", "ja": "初めて会った日", "note": "「初めて会った」整体修饰「日」：日语里动词直接接名词，不需要“的”。" },
+        { "id": "particle-kara", "ja": "日から", "note": "接在时间名词后表示起点。" }
+      ],
+      "note": "这一行只是时间起点，句子的谓语在下一行「奪った」。日语习惯先把时间、起点交代清楚。"
+    },
+    {
+      "id": "L04",
+      "ja": "僕の心の全てを奪った",
+      "zh": "夺走了我心里的一切",
+      "tokens": [
+        { "text": "僕", "reading": "ぼく", "pos": "pronoun", "gloss": "我（男性自称）" },
+        { "text": "の", "pos": "particle", "gloss": "的" },
+        { "text": "心", "reading": "こころ", "pos": "noun", "gloss": "心" },
+        { "text": "の", "pos": "particle", "gloss": "的" },
+        { "text": "全て", "reading": "すべて", "pos": "noun", "gloss": "全部、一切" },
+        { "text": "を", "pos": "particle", "gloss": "（宾语）" },
+        { "text": "奪った", "reading": "うばった", "pos": "verb", "gloss": "夺走", "lemma": { "text": "奪う", "reading": "うばう", "class": "godan" }, "steps": ["Ta"] }
+      ],
+      "chunks": [
+        { "ja": "僕の", "zh": "我", "role": "定语", "note": "僕の＝我的。" },
+        { "ja": "心の", "zh": "心里的", "role": "定语", "note": "の可以一个接一个地串起来：我的→心的→全部。" },
+        { "ja": "全てを", "zh": "一切", "role": "宾语", "note": "を标出被夺走的东西。" },
+        { "ja": "奪った", "zh": "夺走了", "role": "谓语", "note": "奪う的た形：动作已经完成。" }
+      ],
+      "grammar": [
+        { "id": "lyric-pronouns", "ja": "僕", "note": "僕是温和的男性自称，和后面的「君」成对出现。" },
+        { "id": "particle-no", "ja": "僕の", "note": "第一个の：我的。" },
+        { "id": "particle-no", "ja": "心の", "note": "第二个の：心的。两个の连用，范围一层层缩小。" },
+        { "id": "particle-wo", "ja": "全てを", "note": "を表示动作直接作用的对象。" },
+        { "id": "subject-omission", "ja": "奪った", "note": "是谁夺走的？主语「君」要到后两行才出现。" }
+      ],
+      "note": "主语被推迟了：「奪った」可以看作句子先在这里停顿（“（你）夺走了我的一切”），也可以和下一行的「纏う」一起修饰「君」——“从初遇那天起就夺走我一切的、带着虚幻气息的你”。两种读法都成立，这种悬而未决正是歌词的味道。"
+    },
+    {
+      "id": "L05",
+      "ja": "どこか儚い空気を纏う君は",
+      "zh": "身上笼着几分虚幻气息的你",
+      "tokens": [
+        { "text": "どこか", "pos": "adverb", "gloss": "（不知哪里）有几分", "note": "どこ（哪里）＋か（不定）＝某处，引申为“总觉得有几分”" },
+        { "text": "儚い", "reading": "はかない", "pos": "i-adj", "gloss": "虚幻、易逝", "lemma": { "text": "儚い", "reading": "はかない", "class": "i-adj" } },
+        { "text": "空気", "reading": "くうき", "pos": "noun", "gloss": "空气；气息、氛围", "jlpt": "N4" },
+        { "text": "を", "pos": "particle", "gloss": "（宾语）" },
+        { "text": "纏う", "reading": "まとう", "pos": "verb", "gloss": "缠绕；披在身上", "lemma": { "text": "纏う", "reading": "まとう", "class": "godan" } },
+        { "text": "君", "reading": "きみ", "pos": "pronoun", "gloss": "你（亲近的称呼）" },
+        { "text": "は", "pos": "particle", "gloss": "（主题）" }
+      ],
+      "chunks": [
+        { "ja": "どこか", "zh": "几分", "role": "状语", "note": "修饰儚い：有几分虚幻。" },
+        { "ja": "儚い", "zh": "虚幻", "role": "定语", "note": "い形容词直接修饰名词「空気」。" },
+        { "ja": "空気を", "zh": "气息", "role": "宾语", "note": "空気在这里不是“空气”，而是人身上散发的气息、氛围。" },
+        { "ja": "纏う", "zh": "身上笼着", "role": "谓语", "note": "纏う＝缠在身上、披着，用辞书形修饰「君」。" },
+        { "ja": "君は", "zh": "你", "role": "主题", "note": "前面一整串都是「君」的定语；は把“你”立为话题。" }
+      ],
+      "grammar": [
+        { "id": "particle-ka-indefinite", "ja": "どこか", "note": "疑问词どこ＋か：不确定的“某处”，这里虚化成“不知怎么地、有几分”。" },
+        { "id": "iadj-attributive", "ja": "儚い空気", "note": "儚い直接修饰空気，不需要加任何词。" },
+        { "id": "particle-wo", "ja": "空気を", "note": "纏う的对象：披在身上的是“气息”。" },
+        { "id": "relative-clause", "ja": "どこか儚い空気を纏う君", "note": "「どこか儚い空気を纏う」整体修饰「君」。" },
+        { "id": "verb-dictionary", "ja": "纏う", "note": "辞书形作定语。" },
+        { "id": "lyric-pronouns", "ja": "君", "note": "君：对亲近之人的称呼。" },
+        { "id": "particle-wa", "ja": "君は", "note": "主题：说到你……，谓语在下一行。" }
+      ],
+      "note": "结构是 [どこか儚い空気を纏う] 君 は：长长的定语加上主题。は只是把“你”提出来当话题，真正的谓语要等下一行「寂しい目をしてたんだ」。"
+    },
+    {
+      "id": "L06",
+      "ja": "寂しい目をしてたんだ",
+      "zh": "有着一双寂寞的眼睛",
+      "tokens": [
+        { "text": "寂しい", "reading": "さびしい", "pos": "i-adj", "gloss": "寂寞", "lemma": { "text": "寂しい", "reading": "さびしい", "class": "i-adj" }, "jlpt": "N4" },
+        { "text": "目", "reading": "め", "pos": "noun", "gloss": "眼睛；眼神", "jlpt": "N5" },
+        { "text": "を", "pos": "particle", "gloss": "（宾语）" },
+        { "text": "してた", "pos": "verb", "gloss": "（一直）有着", "lemma": { "text": "する", "class": "suru" }, "steps": ["Teru", "Ta"], "jlpt": "N5" },
+        { "text": "ん", "pos": "particle", "gloss": "＝の（说明）" },
+        { "text": "だ", "pos": "copula", "gloss": "（断定）", "lemma": { "text": "だ", "class": "copula" } }
+      ],
+      "chunks": [
+        { "ja": "寂しい", "zh": "寂寞的", "role": "定语" },
+        { "ja": "目を", "zh": "眼睛", "role": "宾语" },
+        { "ja": "してた", "zh": "有着", "role": "谓语", "note": "〜をしている 描写外貌、神情：有着……的眼睛。" },
+        { "ja": "んだ", "role": "语气", "note": "说明、感慨的语气（“原来……啊”），中文没有对应的词，靠语气体现。" }
+      ],
+      "grammar": [
+        { "id": "iadj-attributive", "ja": "寂しい目", "note": "寂しい直接修饰目。" },
+        { "id": "wo-shite-iru", "ja": "目をしてた", "note": "「〜目をしている」＝有着……的眼神，描写外貌特征而不是“做眼睛”。" },
+        { "id": "n-da", "ja": "んだ", "note": "のだ的口语形：回想时补充说明，带着“其实那时的你……”的感慨。" }
+      ],
+      "note": "接上一行：君は ＋ 寂しい目をしてた ＋ んだ。してた＝していた 的口语缩约（てる→てた），表示过去一直持续的状态；句末んだ带出回忆和感慨。"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "kotone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "言音 — a minimal macOS lyrics player for learning Japanese through songs",
+  "type": "module",
+  "bin": {
+    "kotone": "./cli/kotone.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "vite --config web/vite.config.ts",
+    "build:web": "vite build --config web/vite.config.ts",
+    "build:app": "./macos/build.sh",
+    "app": "./macos/build.sh && ./macos/relaunch.sh",
+    "test": "node --test 'core/**/*.test.ts' 'cli/**/*.test.ts'",
+    "typecheck": "tsc --noEmit -p .",
+    "check:songs": "node cli/kotone.ts check songs/*/song.json"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.17"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}
