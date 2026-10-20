@@ -34,6 +34,11 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
     return id && props.song.lines.some((l) => l.id === id) ? id : null;
   };
 
+  // a click on empty space (not a line, the panel or a control) closes the breakdown; the press must
+  // start there too, so a resize drag or text selection that ends outside the panel doesn't
+  const blank = (el: EventTarget | null) => el instanceof Element && !el.closest("[data-line-row], [data-panel], button, a, input");
+  let pressedBlank = false;
+
   const annotated = () => props.song.lines.filter((l) => l.tokens?.length).length;
 
   const toggle = (on: boolean) =>
@@ -45,6 +50,8 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
       class="group/lyrics relative flex h-full flex-col data-nofuri:[&_rt]:hidden"
       data-nofuri={app.settings.furigana ? undefined : ""}
       data-nozh={app.settings.translation ? undefined : ""}
+      onPointerDown={(e) => (pressedBlank = blank(e.target))}
+      onClick={(e) => pressedBlank && blank(e.target) && !getSelection()?.toString() && app.setExpanded(null)}
     >
       {/* the header stays put; only the lines scroll, fading out as they reach it. The breakdown
           panel floats over the right side (the translation column) so nothing reflows */}
