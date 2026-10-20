@@ -174,9 +174,12 @@ test("a line that already has an annotation is a redo: the prompt shows the old 
     ],
   };
   const redo = firstPrompt(song, ["L01"]);
-  assert.match(redo, /L01 已经有标注，但用户边听边看时发现不准确/);
-  assert.match(redo, /旧译文：猫在叫/);
-  assert.match(redo, /鳴く（なく） 动词 「叫」/);
-  assert.doesNotMatch(firstPrompt(song, ["L02"]), /已经有标注/);
-  assert.match(nextPrompt(song, ["L01"]), /旧分词：猫（ねこ）/);
+  assert.match(redo, /L01 已经有一份通过校验的标注/);
+  assert.match(redo, /修订\*\*，不是重写/);
+  // the whole old annotation, phrases included, so its structure can be kept
+  const old = JSON.parse(redo.split("L01  ").at(-1)!);
+  assert.deepEqual(old.chunks, good.chunks);
+  assert.equal(old.zh, "猫在叫");
+  assert.doesNotMatch(firstPrompt(song, ["L02"]), /已经有一份/);
+  assert.match(nextPrompt(song, ["L01"]), /旧标注：/);
 });

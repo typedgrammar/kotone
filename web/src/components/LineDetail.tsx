@@ -96,6 +96,7 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
             </div>
           </Show>
         </section>
+        <Redone song={props.song} line={props.line} />
 
         <Show when={chunk()} keyed fallback={<Whole line={props.line} analysis={a()} hot={hot()} onHot={setHot} onSelect={select} onFocus={setFocus} picked={picked()} onPick={setPicked} />}>
           {(c) => <Phrase c={c} line={props.line} analysis={a()} picked={picked()} onPick={setPicked} onFocus={setFocus} />}
@@ -252,7 +253,7 @@ function Redo(props: { song: Song; line: Line }) {
           class="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] text-fg-3 enabled:hover:bg-hover enabled:hover:text-fg-2 [&_svg]:size-3"
           disabled={busy()}
           title={t(busy() ? "detail.redoBusy" : "detail.redoTip")}
-          onClick={() => agent.annotate(props.song, [props.line.id])}
+          onClick={() => agent.redo(props.song, props.line)}
         >
           <IconRedo />
           {t("detail.redo")}
@@ -263,6 +264,22 @@ function Redo(props: { song: Song; line: Line }) {
         <span class="size-1.5 flex-none animate-agent-pulse rounded-full bg-accent" />
         {t(agent.state.retries[props.line.id] ? "detail.agentFixing" : "detail.redoing")}
       </span>
+    </Show>
+  );
+}
+
+/** After a redo: what Codex says it changed, and the way back if the new one reads worse */
+function Redone(props: { song: Song; line: Line }) {
+  const redone = () => agent.state.redone[`${props.song.id}/${props.line.id}`];
+  return (
+    <Show when={redone() && !agent.isQueued(props.song.id, props.line.id)}>
+      <div class="flex flex-none items-baseline gap-2 px-1 text-[12px]/[1.6] text-fg-2">
+        <span class="flex-none text-accent">{t("detail.redone")}</span>
+        <span class="min-w-0 flex-1">{redone()!.summary}</span>
+        <button class={`${link} flex-none`} onClick={() => agent.undoRedo(props.song, props.line.id)}>
+          {t("detail.undoRedo")}
+        </button>
+      </div>
     </Show>
   );
 }

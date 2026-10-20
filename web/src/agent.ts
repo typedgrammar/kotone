@@ -7,7 +7,7 @@ import guide from "../../docs/annotation-guide.md?raw";
 import { annotate, type AnnotationRun } from "../../core/annotator.ts";
 import { CodexClient, type RateLimits } from "../../core/codex.ts";
 import { specText } from "../../core/spec.ts";
-import type { Song } from "../../core/types.ts";
+import type { Line, Song } from "../../core/types.ts";
 import { bridge, type CodexProbe } from "./bridge.ts";
 import type { Key } from "./i18n.ts";
 import { app } from "./state.ts";
@@ -24,11 +24,12 @@ const INSTALL: AgentError = { key: "agent.err.install" };
  * so each session submits its whole batch in one call and the batches run in parallel. medium effort
  * is as accurate here as the user's global xhigh at half the time; Fast is ~1.6x on top.
  */
-function plan(lines: number) {
+function plan(lines: number, redo: boolean) {
   const sessions = Math.min(8, Math.ceil(lines / 3));
   return {
     spec: specText(guide),
-    effort: "medium",
+    // a redo is one line someone found wrong: worth the slower, more careful pass
+    effort: redo ? "high" : "medium",
     serviceTier: app.settings.codexFast ? "priority" : undefined,
     concurrency: sessions,
     batch: Math.ceil(lines / sessions),
@@ -54,6 +55,8 @@ export const agent = createRoot(() => {
     message: "",
     probe: null as CodexProbe | null,
     probing: false,
+    /** Lines redone this session, by `${songId}/${lineId}`: the annotation before, to go back to, and what Codex says it changed */
+    redone: {} as Record<string, { before: Line; summary?: string }>,
   });
 
   let client: CodexClient | null = null;
@@ -155,7 +158,19 @@ export const agent = createRoot(() => {
     },
     isQueued: (songId: string, lineId: string) => state.songId === songId && state.queue.includes(lineId) && !state.saved.includes(lineId),
     isWorking: (songId: string, lineId: string) => state.songId === songId && state.working.includes(lineId),
-    async annotate(song: Song, lineIds: string[]) {
+    /** Annotate one line again, keeping the current annotation to go back to */
+    redo(song: Song, line: Line) {
+      return this.annotate(song, [line.id], line);
+    },
+    /** Put back the annotation a redo replaced */
+    async undoRedo(song: Song, lineId: string) {
+      const key = `${song.id}/${lineId}`;
+      const before = state.redone[key]?.before;
+      if (!before) return;
+      await app.updateSong({ ...song, lines: song.lines.map((l) => (l.id === lineId ? before : l)) });
+      setState("redone", produce((r) => void delete r[key]));
+    },
+    async annotate(song: Song, lineIds: string[], redoing?: Line) {
       if (run || !lineIds.length) return;
       const c = await connect();
       if (!c || state.status === "login") return void app.setSettingsOpen(true);
@@ -176,11 +191,15 @@ export const agent = createRoot(() => {
                 produce((s) => {
                   s.saved.push(e.lineId);
                   s.working = s.working.filter((id) => id !== e.lineId);
+                  if (redoing) s.redone[`${song.id}/${redoing.id}`] = { before: redoing };
                 }),
               );
             else if (e.type === "message") setState({ message: e.text });
             else if (e.type === "finished") {
               run = null;
+              // Codex's closing sentence says what it changed
+              const redone = redoing && state.redone[`${song.id}/${redoing.id}`];
+              if (redone && state.message) setState("redone", `${song.id}/${redoing!.id}`, "summary", state.message);
               const error: AgentError | null = e.failure
                 ? { raw: e.failure }
                 : e.skipped.length && !e.stopped
@@ -190,7 +209,7 @@ export const agent = createRoot(() => {
             }
           },
         },
-        plan(lineIds.length),
+        plan(lineIds.length, !!redoing),
       );
     },
     stop() {

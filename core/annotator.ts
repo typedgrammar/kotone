@@ -7,7 +7,7 @@ import { analyzeLine, isAnnotated, POS_ZH } from "./analyze.ts";
 import type { CodexClient, DynamicTool } from "./codex.ts";
 import { CLASS_INFO, derive, STEP_IDS, STEP_INFO } from "./conjugate.ts";
 import { GRAMMAR } from "./grammar.ts";
-import type { Line, Song, StepId, Token, WordClass } from "./types.ts";
+import type { Line, Song, StepId, WordClass } from "./types.ts";
 
 export type AnnotatorEvent =
   | { type: "started"; model: string }
@@ -172,27 +172,28 @@ function lyricSheet(song: Song): string {
   return song.lines.map((l) => `${l.id}  ${l.ja}${isAnnotated(l) && l.zh ? `  ｜已标注，译文：${l.zh}` : ""}`).join("\n");
 }
 
-const tokenBrief = (t: Token) =>
-  [
-    t.text + (t.reading ? `（${t.reading}）` : ""),
-    POS_ZH[t.pos] ?? t.pos,
-    t.lemma && t.lemma.text !== t.text ? `原形 ${t.lemma.text}` : "",
-    t.steps?.length ? t.steps.join("+") : "",
-    t.gloss ? `「${t.gloss}」` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+/** The parts of a line an annotation consists of, as the agent submits them */
+const annotationOf = ({ zh, tokens, chunks, grammar, note }: Line) => JSON.stringify({ zh, tokens, chunks, grammar, note });
 
 /**
- * Lines in the batch that already have an annotation are ones the user asked to redo: they found
- * something wrong while listening. The old version is shown so the agent checks it word by word
- * rather than writing the same thing again.
+ * Lines in the batch that already have an annotation are ones the user asked to redo: something
+ * looked wrong while listening, though they didn't say what. That's a revision, not a fresh start:
+ * the old annotation passed the check and is mostly right, so the agent gets all of it and keeps
+ * what holds up — the same phrase split, notes and grammar points — fixing only what's wrong.
  */
 function redoNote(song: Song, batch: string[]): string {
   const old = batch.flatMap((id) => song.lines.filter((l) => l.id === id && isAnnotated(l)));
   if (!old.length) return "";
-  const shown = old.map((l) => `${l.id}  ${l.ja}\n  旧译文：${l.zh ?? ""}\n  旧分词：${(l.tokens ?? []).map(tokenBrief).join(" / ")}`);
-  return `\n\n其中 ${old.map((l) => l.id).join("、")} 已经有标注，但用户边听边看时发现不准确（可能是某个词的读音、词义、词性、原形或变形步骤，也可能是分段、语法点或译文）。请结合上下文逐词重新核对，写出一份新的完整标注：旧标注只作对照，不要照抄，拿不准的变形用 conj 验证。\n${shown.join("\n")}`;
+  return `
+
+其中 ${old.map((l) => l.id).join("、")} 已经有一份通过校验的标注，但用户边听边看时觉得有不准确的地方（没说具体是哪里）。这是一次**修订**，不是重写：
+- 逐词核对读音、词义、词性、原形和变形步骤，再核对分段、语法点、译文和各处 note，找出真正有错的地方改正。
+- 没错的部分原样保留：chunks 的切分不要变粗，note 和语法点不要变少，除非它们本身有错。
+- 拿不准的变形用 conj 验证。提交时仍然提交整行的完整标注。
+- 全部通过后，用一句话说明改了什么；没找到错就说没找到。
+
+旧标注：
+${old.map((l) => `${l.id}  ${annotationOf(l)}`).join("\n")}`;
 }
 
 export function firstPrompt(song: Song, batch: string[]): string {

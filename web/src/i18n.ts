@@ -53,9 +53,11 @@ const zh = {
   "detail.agentWorking": "Codex 正在标注这一行…",
   "detail.agentQueued": "已排队，Codex 稍后会标注这一行",
   "detail.redo": "重新标注",
-  "detail.redoTip": "这句标得不对？让 Codex 对照上下文重新标注这一句。新标注通过校验后才会替换现在的。",
+  "detail.redoTip": "这句标得不对？让 Codex 对照上下文仔细复查这一句并改正。新标注通过校验后才会替换现在的，之后也可以恢复。",
   "detail.redoBusy": "Codex 正在标注，等这次结束再试",
   "detail.redoing": "Codex 正在重新标注这句…",
+  "detail.redone": "已重新标注",
+  "detail.undoRedo": "恢复原来的",
 
   // codex in the header
   "agent.annotateSong": "标注整首歌",
@@ -229,9 +231,11 @@ const en: Record<Key, string> = {
   "detail.agentWorking": "Codex is annotating this line…",
   "detail.agentQueued": "Queued — Codex will get to this line shortly",
   "detail.redo": "Redo",
-  "detail.redoTip": "Something wrong in this line? Have Codex annotate it again in context. The new annotation replaces this one only once it passes the check.",
+  "detail.redoTip": "Something wrong in this line? Have Codex review it carefully in context and fix it. The new annotation replaces this one only once it passes the check, and you can restore this one afterwards.",
   "detail.redoBusy": "Codex is busy annotating; try again when it's done",
   "detail.redoing": "Codex is re-annotating this line…",
+  "detail.redone": "Redone",
+  "detail.undoRedo": "Restore the previous one",
 
   "agent.annotateSong": "Annotate song",
   "agent.annotateTip": "Have Codex annotate the {n} lines that aren't annotated yet",
