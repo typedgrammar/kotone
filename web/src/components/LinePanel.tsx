@@ -1,6 +1,7 @@
 // A line's breakdown in a full-height panel on the right (like Notion's side peek). It floats over
-// the space the lyrics column leaves free, so opening it moves nothing. Click another line to
-// switch, j/k to step, Esc or × to close. The left edge drags to resize; the width is remembered.
+// the translation column, so opening it moves nothing. Click another line to
+// switch, j/k to step, Esc or × to close. The left edge drags to resize (double-click: back to
+// covering the translation column); a dragged width is remembered.
 
 import { createMemo, Show } from "solid-js";
 import { analysisOf } from "../../../core/library.ts";
@@ -13,7 +14,12 @@ import { IconClose, IconDown, IconPause, IconPlay, IconStar, IconUp } from "./ic
 import { LineDetail } from "./LineDetail.tsx";
 
 export const PANEL_MIN = 360;
-export const PANEL_WIDTH = 420;
+/**
+ * Unless dragged, the panel covers exactly the translation column of LyricsView's line grid
+ * (22px gutter, 1.3fr Japanese, 1fr Chinese, 28px star, 18px gaps, inside 24px + 4/10px padding):
+ * the Chinese column, the star and padding to its right, and 12px to its left.
+ */
+const OVER_TRANSLATION = "calc((100% - 166px) / 2.3 + 92px)";
 
 const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 
@@ -37,7 +43,7 @@ export function LinePanel(props: { song: Song; lineId: string; playable: boolean
     e.preventDefault();
     const right = aside.getBoundingClientRect().right;
     const max = () => (aside.parentElement?.clientWidth ?? 1000) * 0.62;
-    const move = (m: PointerEvent) => app.setSettings({ breakdownWidth: Math.round(Math.max(PANEL_MIN, Math.min(max(), right - m.clientX))) });
+    const move = (m: PointerEvent) => app.setSettings({ panelPx: Math.round(Math.max(PANEL_MIN, Math.min(max(), right - m.clientX))) });
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -52,13 +58,13 @@ export function LinePanel(props: { song: Song; lineId: string; playable: boolean
     <aside
       ref={aside}
       data-panel
-      class="@container absolute inset-y-0 right-0 z-4 flex animate-panel-in flex-col border-l border-line bg-elev shadow-[-8px_0_32px_rgba(0,0,0,0.06)] group-data-cover/app:bg-elev/78 group-data-cover/app:backdrop-blur-[30px] group-data-cover/app:backdrop-saturate-130 dark:shadow-[-8px_0_32px_rgba(0,0,0,0.3)]"
-      style={{ width: `min(${app.settings.breakdownWidth}px, 62%)` }}
+      class="@container absolute inset-y-0 right-0 z-4 flex animate-panel-in flex-col border-l border-line bg-elev shadow-[-8px_0_32px_rgba(0,0,0,0.06)] dark:shadow-[-8px_0_32px_rgba(0,0,0,0.3)]"
+      style={{ width: app.settings.panelPx ? `min(${app.settings.panelPx}px, 62%)` : `max(${PANEL_MIN}px, ${OVER_TRANSLATION})` }}
     >
       <div
         class="absolute inset-y-0 -left-[3px] z-1 w-[6px] cursor-col-resize hover:bg-accent/30 active:bg-accent/40"
         onPointerDown={resize}
-        onDblClick={() => app.setSettings({ breakdownWidth: PANEL_WIDTH })}
+        onDblClick={() => app.setSettings({ panelPx: 0 })}
       />
       {/* below the window's 28px drag strip, level with the view headers */}
       <header class="flex flex-none items-center gap-1 px-3.5 pt-9 pb-1">

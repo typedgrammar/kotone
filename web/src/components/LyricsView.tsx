@@ -23,7 +23,7 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
     return hit?.id ?? null;
   });
 
-  // follow the playing line (the breakdown sits beside the lyrics, so it never hides it)
+  // follow the playing line (an open breakdown covers only the translation column)
   createEffect(
     on(active, (id) => {
       if (id && app.playing()) revealLine(id, "center", true);
@@ -46,9 +46,9 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
       data-nofuri={app.settings.furigana ? undefined : ""}
       data-nozh={app.settings.translation ? undefined : ""}
     >
-      {/* the header stays put; only the lines scroll, fading out as they reach it. Both keep to a
-          column on the left, so the breakdown panel opens over empty space and nothing reflows */}
-      <header class={`relative z-3 flex flex-none items-end justify-between gap-4 px-10 pt-8.5 pb-1.5 ${COLUMN}`}>
+      {/* the header stays put; only the lines scroll, fading out as they reach it. The breakdown
+          panel floats over the right side (the translation column) so nothing reflows */}
+      <header class="relative z-3 flex flex-none items-end justify-between gap-4 px-10 pt-8.5 pb-1.5">
         <div>
           <h1 class="m-0 font-ja text-[28px]/[1.9] font-semibold tracking-[0.04em] [&_rt]:text-[11px] [&_rt]:font-medium">
             <Ruby segs={rubyFor(props.song.title, props.song.titleReading)} />
@@ -82,7 +82,7 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
       </header>
 
       <div data-lines-scroll class="min-h-0 flex-1 overflow-y-auto pt-3.5 pb-[35vh] [mask-image:linear-gradient(transparent,#000_28px)]">
-        <div class={`px-6 ${COLUMN}`}>
+        <div class="px-6">
           <For each={props.song.lines}>
             {(line) => <LyricLine song={props.song} line={line} active={active() === line.id} playable={props.playable} />}
           </For>
@@ -97,8 +97,6 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
 }
 
 const sep = "mx-1.5 text-fg-3";
-/** The lyrics' width: room for a long line at 21px, leaving the panel's default width free beside it */
-const COLUMN = "max-w-[568px]";
 
 function LyricLine(props: { song: Song; line: Line; active: boolean; playable: boolean }) {
   const analysis = createMemo(() => analysisOf(props.song, props.line));
@@ -130,7 +128,7 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
     <div id={`line-${props.line.id}`} class="relative my-0.5 scroll-mt-7 rounded-[14px]">
       <div
         data-line-row
-        class={`group/row grid grid-cols-[22px_minmax(0,1fr)_28px] items-center gap-x-4.5 rounded-[14px] py-1.5 pr-2.5 pl-1 ${
+        class={`group/row grid grid-cols-[22px_minmax(0,1.3fr)_minmax(0,1fr)_28px] items-center gap-4.5 rounded-[14px] py-1.5 pr-2.5 pl-1 group-data-nozh/lyrics:grid-cols-[22px_minmax(0,1fr)_28px] ${
           open() ? "bg-sel" : "hover:bg-hover"
         }`}
         onClick={() => app.setExpanded(open() ? null : props.line.id)}
@@ -152,12 +150,12 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
           <JaLine ja={props.line.ja} analysis={analysis()} />
         </div>
         <div
-          class={`font-zh text-[15px]/[1.6] transition-colors duration-200 group-data-nozh/lyrics:hidden col-start-2 row-start-2 -mt-1 pb-1 ${props.active ? "text-fg" : "text-fg-2"}`}
+          class={`font-zh text-[15px]/[1.6] transition-colors duration-200 group-data-nozh/lyrics:hidden ${props.active ? "text-fg" : "text-fg-2"}`}
         >
           {props.line.zh}
         </div>
         <button
-          class={`col-start-3 row-start-1 inline-grid size-6.5 place-items-center rounded-md transition-opacity duration-120 hover:bg-hover ${
+          class={`inline-grid size-6.5 place-items-center rounded-md transition-opacity duration-120 hover:bg-hover ${
             fav() ? "text-star" : "text-fg-2 opacity-0 group-hover/row:opacity-100 hover:text-fg"
           }`}
           title={t(fav() ? "line.unfav" : "line.fav")}
