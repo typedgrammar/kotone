@@ -160,3 +160,23 @@ test("parallel sessions split the queue and the last write has every line", asyn
   assert.deepEqual(asked, lines.map((l) => l.id), "each line asked for exactly once");
   assert.equal(last!.lines.filter((l) => l.tokens).length, 8);
 });
+
+test("a line that already has an annotation is a redo: the prompt shows the old one to check", async () => {
+  const { firstPrompt, nextPrompt } = await import("./annotator.ts");
+  const song: Song = {
+    version: 1,
+    id: "t",
+    title: "テスト",
+    artist: "テスター",
+    lines: [
+      { id: "L01", ja: "猫が鳴く", ...good },
+      { id: "L02", ja: "犬が走る" },
+    ],
+  };
+  const redo = firstPrompt(song, ["L01"]);
+  assert.match(redo, /L01 已经有标注，但用户边听边看时发现不准确/);
+  assert.match(redo, /旧译文：猫在叫/);
+  assert.match(redo, /鳴く（なく） 动词 「叫」/);
+  assert.doesNotMatch(firstPrompt(song, ["L02"]), /已经有标注/);
+  assert.match(nextPrompt(song, ["L01"]), /旧分词：猫（ねこ）/);
+});

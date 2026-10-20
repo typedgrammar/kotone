@@ -7,7 +7,7 @@ import { analyzeLine, isAnnotated, POS_ZH } from "./analyze.ts";
 import type { CodexClient, DynamicTool } from "./codex.ts";
 import { CLASS_INFO, derive, STEP_IDS, STEP_INFO } from "./conjugate.ts";
 import { GRAMMAR } from "./grammar.ts";
-import type { Line, Song, StepId, WordClass } from "./types.ts";
+import type { Line, Song, StepId, Token, WordClass } from "./types.ts";
 
 export type AnnotatorEvent =
   | { type: "started"; model: string }
@@ -172,16 +172,40 @@ function lyricSheet(song: Song): string {
   return song.lines.map((l) => `${l.id}  ${l.ja}${isAnnotated(l) && l.zh ? `  ｜已标注，译文：${l.zh}` : ""}`).join("\n");
 }
 
+const tokenBrief = (t: Token) =>
+  [
+    t.text + (t.reading ? `（${t.reading}）` : ""),
+    POS_ZH[t.pos] ?? t.pos,
+    t.lemma && t.lemma.text !== t.text ? `原形 ${t.lemma.text}` : "",
+    t.steps?.length ? t.steps.join("+") : "",
+    t.gloss ? `「${t.gloss}」` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+/**
+ * Lines in the batch that already have an annotation are ones the user asked to redo: they found
+ * something wrong while listening. The old version is shown so the agent checks it word by word
+ * rather than writing the same thing again.
+ */
+function redoNote(song: Song, batch: string[]): string {
+  const old = batch.flatMap((id) => song.lines.filter((l) => l.id === id && isAnnotated(l)));
+  if (!old.length) return "";
+  const shown = old.map((l) => `${l.id}  ${l.ja}\n  旧译文：${l.zh ?? ""}\n  旧分词：${(l.tokens ?? []).map(tokenBrief).join(" / ")}`);
+  return `\n\n其中 ${old.map((l) => l.id).join("、")} 已经有标注，但用户边听边看时发现不准确（可能是某个词的读音、词义、词性、原形或变形步骤，也可能是分段、语法点或译文）。请结合上下文逐词重新核对，写出一份新的完整标注：旧标注只作对照，不要照抄，拿不准的变形用 conj 验证。\n${shown.join("\n")}`;
+}
+
 export function firstPrompt(song: Song, batch: string[]): string {
   return `歌曲：《${song.title}》— ${song.artist}
 
 全曲歌词（供理解上下文：跨行的主语、省略、倒装都要结合上下文判断；已标注的行附有译文，保持风格一致）：
 ${lyricSheet(song)}
 
-这一轮请标注 ${batch.length} 行：${batch.join("、")}。写好后用一次 submit_lines 提交。`;
+这一轮请标注 ${batch.length} 行：${batch.join("、")}。写好后用一次 submit_lines 提交。${redoNote(song, batch)}`;
 }
 
-export const nextPrompt = (batch: string[]) => `继续，这一轮请标注 ${batch.length} 行：${batch.join("、")}。写好后用一次 submit_lines 提交。`;
+export const nextPrompt = (song: Song, batch: string[]) =>
+  `继续，这一轮请标注 ${batch.length} 行：${batch.join("、")}。写好后用一次 submit_lines 提交。${redoNote(song, batch)}`;
 
 /** Replaces Codex's coding-agent system prompt: this session only writes annotations. */
 export const BASE_INSTRUCTIONS =
@@ -261,7 +285,7 @@ export function annotate(client: CodexClient, song: Song, targets: string[], hoo
         const finished = waitTurn(client, threadId, hooks);
         const { turn } = await client.request<{ turn: { id: string } }>("turn/start", {
           threadId,
-          input: [{ type: "text", text: first ? firstPrompt(state.song, batch) : nextPrompt(batch), text_elements: [] }],
+          input: [{ type: "text", text: first ? firstPrompt(state.song, batch) : nextPrompt(state.song, batch), text_elements: [] }],
           ...(opts.effort ? { effort: opts.effort } : {}),
           ...(opts.serviceTier ? { serviceTier: opts.serviceTier } : {}),
         });

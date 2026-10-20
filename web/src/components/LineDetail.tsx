@@ -10,7 +10,7 @@ import type { Line, Song } from "../../../core/types.ts";
 import { agent } from "../agent.ts";
 import { label, lang, t } from "../i18n.ts";
 import { app } from "../state.ts";
-import { IconArrow } from "./icons.tsx";
+import { IconArrow, IconRedo } from "./icons.tsx";
 import { JaLine, Ruby, ZhLine } from "./Text.tsx";
 import { chunkColor, level, link, sectionLabel } from "../ui.ts";
 
@@ -69,8 +69,9 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
             >
               {t("detail.whole")}
             </button>
+            <Redo song={props.song} line={props.line} />
             <Show when={a().chunks.length > 1}>
-              <span class="ml-auto flex gap-[3px]" title={t("detail.keysTip")}>
+              <span class="flex gap-[3px]" title={t("detail.keysTip")}>
                 <kbd class={kbd}>←</kbd>
                 <kbd class={kbd}>→</kbd>
               </span>
@@ -233,6 +234,36 @@ function Words(props: { tokens: ResolvedToken[]; picked: number | null; onPick: 
         {(tk) => <WordCard t={tk} picked={props.picked === tk.index} onPick={() => props.onPick(props.picked === tk.index ? null : tk.index)} />}
       </For>
     </div>
+  );
+}
+
+/**
+ * For the odd line whose annotation turns out wrong once heard: one click hands just this line back
+ * to Codex. The old annotation stays until the new one passes the check.
+ */
+function Redo(props: { song: Song; line: Line }) {
+  const queued = () => agent.isQueued(props.song.id, props.line.id);
+  const busy = () => agent.state.status === "working" || agent.state.status === "starting";
+  return (
+    <Show
+      when={queued()}
+      fallback={
+        <button
+          class="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] text-fg-3 enabled:hover:bg-hover enabled:hover:text-fg-2 [&_svg]:size-3"
+          disabled={busy()}
+          title={t(busy() ? "detail.redoBusy" : "detail.redoTip")}
+          onClick={() => agent.annotate(props.song, [props.line.id])}
+        >
+          <IconRedo />
+          {t("detail.redo")}
+        </button>
+      }
+    >
+      <span class="ml-auto flex items-center gap-1.5 text-[11.5px] text-fg-2">
+        <span class="size-1.5 flex-none animate-agent-pulse rounded-full bg-accent" />
+        {t(agent.state.retries[props.line.id] ? "detail.agentFixing" : "detail.redoing")}
+      </span>
+    </Show>
   );
 }
 

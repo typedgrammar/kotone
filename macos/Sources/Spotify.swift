@@ -17,6 +17,11 @@ final class Spotify {
   // that gets hidden again and the app that was in front gets focus back
   private var guardUntil = Date.distantPast
   private var restoreTo: NSRunningApplication?
+  // a track Kotone plays stops at its end, back at 0:00, instead of running on into whatever
+  // Spotify has queued next (tracks the user plays in Spotify itself are left alone)
+  private var owned: String?
+  private var current: String?
+  private var stopAtEnd: DispatchWorkItem?
 
   init(emit: @escaping ([String: Any]) -> Void) {
     self.emit = emit
@@ -74,19 +79,43 @@ final class Spotify {
       } catch {
         out["error"] = (error as NSError).code == -1743 ? "spotify.err.permission" : error.localizedDescription
       }
-      DispatchQueue.main.async { self.emit(out) }
+      DispatchQueue.main.async {
+        self.watchEnd(out)
+        self.emit(out)
+      }
     }
   }
 
-  func toggle() { command("playpause") }
+  /// Re-armed on every read (at least every 1.5s), so the timer always runs from a fresh position.
+  private func watchEnd(_ s: [String: Any]) {
+    current = s["trackId"] as? String
+    stopAtEnd?.cancel()
+    stopAtEnd = nil
+    guard let id = current, id == owned, s["state"] as? String == "playing",
+      let position = s["position"] as? Double, let duration = s["duration"] as? Double, duration > 0
+    else { return }
+    let left = duration - position
+    guard left < 5 else { return }
+    let stop = DispatchWorkItem { [weak self] in self?.command("pause\n  set player position to 0") }
+    stopAtEnd = stop
+    // a moment early: at the very end Spotify has already moved on
+    DispatchQueue.main.asyncAfter(deadline: .now() + max(0, left - 0.35), execute: stop)
+  }
+
+  func toggle() {
+    owned = current
+    command("playpause")
+  }
   func pause() { command("pause") }
   func seek(to seconds: Double) { command("set player position to \(seconds)") }
 
   /// Play a track (`spotify:track:…`), optionally from a position. Starts Spotify (hidden) if needed.
   func play(uri: String?, at seconds: Double?) {
     guard let uri, uri.range(of: "^spotify:track:[A-Za-z0-9]+$", options: .regularExpression) != nil else {
+      owned = current
       return command("play")
     }
+    owned = uri
     // a freshly started track needs a moment before it takes a position
     let from = seconds.map { "\n  delay 0.4\n  set player position to \($0)" } ?? ""
     whenRunning { self.command("play track \"\(uri)\"\(from)") }
