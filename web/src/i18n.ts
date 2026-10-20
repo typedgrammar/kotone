@@ -8,12 +8,15 @@ import { app } from "./state.ts";
 
 const zh = {
   // nav & shell
+  "nav.library": "资料库",
   "nav.lyrics": "歌词",
   "nav.favorites": "收藏",
   "nav.grammar": "语法",
   "nav.vocab": "词汇",
   "nav.search": "找歌词",
-  "side.library": "资料库",
+  "side.songs": "歌曲",
+  "library.count": "{n} 首歌",
+  "library.finding": "正在找封面…",
   "side.unreadable": "无法读取",
   "side.import": "导入标注好的 song.json",
   "side.reveal": "在访达中打开资料库",
@@ -30,10 +33,14 @@ const zh = {
   "toggle.translation": "译文",
   "toggle.translationTip": "译文 (T)",
   "line.playFrom": "从这句开始播放",
+  "line.pause": "暂停（空格）",
   "line.fav": "收藏这句",
   "line.unfav": "取消收藏",
 
   // line detail
+  "detail.whole": "全句",
+  "detail.keysTip": "← → 切换句子成分",
+  "detail.lineGrammar": "整句语法",
   "detail.words": "词语",
   "detail.points": "知识点",
   "detail.inflectsLike": "按{cls}变化",
@@ -115,10 +122,15 @@ const zh = {
 
   // player
   "player.toggle": "播放/暂停 (空格)",
-  "player.pick": "选择音频文件",
   "player.link": "关联音频文件…",
-  "player.relink": "更换音频文件",
   "player.err.play": "无法播放这个音频文件",
+  "player.searching": "正在 Spotify 上查找…",
+  "player.missing": "Spotify 上没有找到这首歌",
+  "player.viaSpotify": "正在通过 Spotify 播放",
+  "player.viaFile": "本地音频文件（点击更换）",
+  "spotify.err.permission": "需要允许 Kotone 控制 Spotify：系统设置 › 隐私与安全性 › 自动化",
+  "spotify.err.command": "Spotify 没有响应",
+  "spotify.err.search": "Spotify 搜索没有响应",
 
   // lyric search
   "search.title": "找歌词",
@@ -156,12 +168,15 @@ const zh = {
 export type Key = keyof typeof zh;
 
 const en: Record<Key, string> = {
+  "nav.library": "Library",
   "nav.lyrics": "Lyrics",
   "nav.favorites": "Saved",
   "nav.grammar": "Grammar",
   "nav.vocab": "Words",
   "nav.search": "Find lyrics",
-  "side.library": "Library",
+  "side.songs": "Songs",
+  "library.count": "{n} songs",
+  "library.finding": "Finding the cover…",
   "side.unreadable": "Can't be read",
   "side.import": "Import an annotated song.json",
   "side.reveal": "Show library in Finder",
@@ -177,9 +192,13 @@ const en: Record<Key, string> = {
   "toggle.translation": "Translation",
   "toggle.translationTip": "Translation (T)",
   "line.playFrom": "Play from this line",
+  "line.pause": "Pause (Space)",
   "line.fav": "Save this line",
   "line.unfav": "Remove from saved",
 
+  "detail.whole": "Whole line",
+  "detail.keysTip": "← → to switch phrases",
+  "detail.lineGrammar": "Across the line",
   "detail.words": "Words",
   "detail.points": "Grammar points",
   "detail.inflectsLike": "Inflects like {cls}",
@@ -257,10 +276,15 @@ const en: Record<Key, string> = {
   "fav.remove": "Remove from saved",
 
   "player.toggle": "Play/Pause (Space)",
-  "player.pick": "Choose an audio file",
   "player.link": "Link audio file…",
-  "player.relink": "Change audio file",
   "player.err.play": "This audio file can't be played",
+  "player.searching": "Looking it up on Spotify…",
+  "player.missing": "This song isn't on Spotify",
+  "player.viaSpotify": "Playing through Spotify",
+  "player.viaFile": "Local audio file (click to change)",
+  "spotify.err.permission": "Allow Kotone to control Spotify: System Settings › Privacy & Security › Automation",
+  "spotify.err.command": "Spotify didn't respond",
+  "spotify.err.search": "Spotify search didn't respond",
 
   "search.title": "Find lyrics",
   "search.placeholder": "Title artist",

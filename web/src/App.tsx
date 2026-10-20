@@ -1,5 +1,6 @@
 import { createEffect, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import { bridge } from "./bridge.ts";
+import { LibraryView } from "./components/Library.tsx";
 import { LyricsSearch } from "./components/LyricsSearch.tsx";
 import { LyricsView } from "./components/LyricsView.tsx";
 import { FavoritesView, GrammarView, VocabView } from "./components/Outline.tsx";
@@ -8,6 +9,7 @@ import { Settings } from "./components/Settings.tsx";
 import { lang, t } from "./i18n.ts";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { app } from "./state.ts";
+import { revealLine } from "./reveal.ts";
 
 function onKey(e: KeyboardEvent) {
   if (e.metaKey && e.key === ",") return void (e.preventDefault(), app.setSettingsOpen(true)); // browser preview; the app menu handles it natively
@@ -34,8 +36,9 @@ function onKey(e: KeyboardEvent) {
     case "k": {
       if (app.view() !== "lyrics" || !lines.length) return;
       const next = lines[Math.min(lines.length - 1, Math.max(0, i + (e.key === "ArrowDown" || e.key === "j" ? 1 : i < 0 ? lines.length : -1)))];
+      // scroll first so the popover measures its place against where the line ends up
+      revealLine(next.id, "nearest");
       app.setExpanded(next.id);
-      requestAnimationFrame(() => document.getElementById(`line-${next.id}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
       break;
     }
     default:
@@ -45,13 +48,15 @@ function onKey(e: KeyboardEvent) {
 }
 
 export function App() {
+  const backdrop = () => app.current()?.cover || null;
   // <html lang> picks the right CJK glyphs; the native menus follow too
   createEffect(() => {
     document.documentElement.lang = lang() === "en" ? "en" : "zh-Hans";
     bridge.setLanguage(lang());
   });
   onMount(() => {
-    void app.refresh();
+    // covers for songs that predate cover download fill in quietly after the first load
+    void app.refresh().then(() => app.fillCovers());
     window.addEventListener("keydown", onKey);
     // songs added from the CLI appear when the window regains focus
     window.addEventListener("focus", app.refresh);
@@ -61,17 +66,25 @@ export function App() {
     window.removeEventListener("focus", app.refresh);
   });
   return (
-    <div class="app" classList={{ native: bridge.native }}>
+    <div class="app" classList={{ native: bridge.native, "has-cover": !!backdrop() }}>
+      {/* the current song's cover, blurred, behind the whole window */}
+      <Show when={backdrop()} keyed>
+        {/* absolute: a url() inside a custom property resolves against the stylesheet, not the page */}
+        {(src) => <div class="backdrop" style={{ "--cover": `url("${new URL(src, location.href).href}")` }} />}
+      </Show>
       <Sidebar />
       <main class="main">
         <div class="content">
           <Switch>
+            <Match when={app.view() === "library"}>
+              <LibraryView />
+            </Match>
             <Match when={app.view() === "lyrics"}>
               <Show
                 when={app.current()?.song}
                 fallback={<p class="muted empty pad">{t("app.empty")}</p>}
               >
-                {(song) => <LyricsView song={song()} hasAudio={!!app.current()?.audio} />}
+                {(song) => <LyricsView song={song()} playable={!!app.current()?.audio || app.spotify.installed} />}
               </Show>
             </Match>
             <Match when={app.view() === "favorites"}>

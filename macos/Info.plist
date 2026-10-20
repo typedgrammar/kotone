@@ -24,6 +24,8 @@
   <string>public.app-category.music</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>Kotone plays your songs through the Spotify app and keeps the lyrics in time with it.</string>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
 </dict>

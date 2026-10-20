@@ -1,8 +1,9 @@
-// The on-demand breakdown of one lyric line: structure ↔ translation, words with their
-// derivations, and the grammar points it demonstrates.
+// The breakdown of one lyric line, organised around its phrases (chunks): the line itself is the
+// tab bar. "Whole line" gives the sentence-level picture; picking a phrase shows just its words and
+// the grammar it touches, so nothing needs a long scroll. ←/→ step through the phrases.
 
-import { createSignal, For, Show } from "solid-js";
-import { POS_ZH, type LineAnalysis, type ResolvedGrammar, type ResolvedToken } from "../../../core/analyze.ts";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { POS_ZH, type LineAnalysis, type ResolvedChunk, type ResolvedGrammar, type ResolvedToken } from "../../../core/analyze.ts";
 import { CLASS_INFO, STEP_INFO } from "../../../core/conjugate.ts";
 import { rubyFor } from "../../../core/furigana.ts";
 import type { Line, Song } from "../../../core/types.ts";
@@ -12,71 +13,205 @@ import { app } from "../state.ts";
 import { IconArrow } from "./icons.tsx";
 import { CHUNK_COLORS, JaLine, Ruby, ZhLine } from "./Text.tsx";
 
+const ordered = (gs: ResolvedGrammar[]) => gs.filter((g) => !g.auto).concat(gs.filter((g) => g.auto));
+const within = (g: ResolvedGrammar, c: ResolvedChunk) => g.start >= c.start && g.end <= c.end;
+const touches = (g: ResolvedGrammar, c: ResolvedChunk) => g.start < c.end && c.start < g.end;
+
 export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalysis }) {
   const [hot, setHot] = createSignal<number | null>(null);
   const [focus, setFocus] = createSignal<[number, number] | null>(null);
   const [picked, setPicked] = createSignal<number | null>(null);
+  /** null = whole line */
+  const [sel, setSel] = createSignal<number | null>(null);
   const a = () => props.analysis;
-  const notedChunks = () => a().chunks.filter((c) => c.chunk.note);
+  const chunk = () => (sel() === null ? null : a().chunks[sel()!]);
+
+  function select(i: number | null) {
+    setSel(i);
+    setPicked(null);
+    setFocus(null);
+  }
+  // clicking a word in the line opens its phrase with that word picked
+  function pickToken(i: number) {
+    const c = a().chunks.find((c) => i >= c.tokenStart && i < c.tokenEnd);
+    select(c ? c.index : null);
+    setPicked(i);
+  }
+
+  onMount(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || e.metaKey || e.altKey || app.settingsOpen()) return;
+      if ((e.target as Element).closest?.("input, textarea") || !a().chunks.length) return;
+      e.preventDefault();
+      // whole line sits before the first phrase: -1, 0 … n-1
+      const n = a().chunks.length;
+      const cur = sel() ?? -1;
+      const next = e.key === "ArrowRight" ? Math.min(n - 1, cur + 1) : Math.max(-1, cur - 1);
+      select(next < 0 ? null : next);
+    };
+    window.addEventListener("keydown", onKey);
+    onCleanup(() => window.removeEventListener("keydown", onKey));
+  });
 
   return (
     <div class="detail" onClick={(e) => e.stopPropagation()}>
       <Show when={a().tokens.length} fallback={<Unannotated song={props.song} line={props.line} />}>
         <section class="structure">
+          <div class="structure-bar">
+            <button class="whole" classList={{ on: sel() === null }} onClick={() => select(null)}>
+              {t("detail.whole")}
+            </button>
+            <Show when={a().chunks.length > 1}>
+              <span class="keys" title={t("detail.keysTip")}>
+                <kbd>←</kbd>
+                <kbd>→</kbd>
+              </span>
+            </Show>
+          </div>
           <div class="structure-ja">
-            <JaLine ja={props.line.ja} analysis={a()} chunks hot={hot()} onHot={setHot} focus={focus()} onToken={setPicked} />
+            <JaLine
+              ja={props.line.ja}
+              analysis={a()}
+              chunks
+              hot={hot()}
+              onHot={setHot}
+              focus={focus()}
+              onToken={pickToken}
+              selected={sel()}
+              onChunk={(i) => select(sel() === i ? null : i)}
+            />
           </div>
           <Show when={props.line.zh}>
             <div class="structure-zh">
-              <ZhLine zh={props.line.zh!} analysis={a()} hot={hot()} onHot={setHot} />
+              <ZhLine zh={props.line.zh!} analysis={a()} hot={hot()} onHot={setHot} selected={sel()} onChunk={(i) => select(sel() === i ? null : i)} />
             </div>
           </Show>
-          <Show when={props.line.note}>
-            <p class="line-note">{props.line.note}</p>
-          </Show>
-          <Show when={notedChunks().length}>
-            <ul class="chunk-notes">
-              <For each={notedChunks()}>
-                {(c) => (
-                  <li
-                    classList={{ hot: hot() === c.index }}
-                    onMouseEnter={() => setHot(c.index)}
-                    onMouseLeave={() => setHot(null)}
-                  >
-                    <span class={`dot c${c.index % CHUNK_COLORS}`} />
-                    <span class="cn-ja">{c.chunk.ja}</span>
-                    <Show when={c.zh.length}>
-                      <span class="cn-zh">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
-                    </Show>
-                    <span class="cn-role">{c.chunk.role}</span>
-                    <span class="cn-note">{c.chunk.note}</span>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </Show>
         </section>
 
-        <section>
-          <h4>{t("detail.words")}</h4>
-          <div class="words">
-            <For each={a().tokens}>
-              {(t) => <WordCard t={t} picked={picked() === t.index} onPick={() => setPicked(picked() === t.index ? null : t.index)} />}
-            </For>
-          </div>
-        </section>
-
-        <Show when={a().grammar.length}>
-          <section>
-            <h4>{t("detail.points")}</h4>
-            <ul class="grammar-refs">
-              <For each={a().grammar.filter((g) => !g.auto).concat(a().grammar.filter((g) => g.auto))}>
-                {(g) => <GrammarRow g={g} line={props.line} onFocus={setFocus} />}
-              </For>
-            </ul>
-          </section>
+        <Show when={chunk()} keyed fallback={<Whole line={props.line} analysis={a()} hot={hot()} onHot={setHot} onSelect={select} onFocus={setFocus} picked={picked()} onPick={setPicked} />}>
+          {(c) => <Phrase c={c} line={props.line} analysis={a()} picked={picked()} onPick={setPicked} onFocus={setFocus} />}
         </Show>
       </Show>
+    </div>
+  );
+}
+
+/** Fades the bottom edge while there's more to scroll to, so a clipped list doesn't look finished. */
+function fadeWhenClipped(el: HTMLElement) {
+  const update = () => el.classList.toggle("clipped", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  const ro = new ResizeObserver(update);
+  ro.observe(el);
+  // a picked word card grows the content without resizing the box
+  queueMicrotask(() => [...el.children].forEach((c) => ro.observe(c)));
+  el.addEventListener("scroll", update, { passive: true });
+  onCleanup(() => ro.disconnect());
+}
+
+/** Whole line: the sentence note, one row per phrase (each opens it), grammar spanning phrases. */
+function Whole(props: {
+  line: Line;
+  analysis: LineAnalysis;
+  hot: number | null;
+  onHot: (i: number | null) => void;
+  onSelect: (i: number) => void;
+  onFocus: (r: [number, number] | null) => void;
+  picked: number | null;
+  onPick: (i: number | null) => void;
+}) {
+  const a = () => props.analysis;
+  const across = () => ordered(a().grammar.filter((g) => !a().chunks.some((c) => within(g, c))));
+  // words no phrase claims (or every word, for a line annotated without chunks)
+  const loose = () => a().tokens.filter((tk) => !a().chunks.some((c) => tk.index >= c.tokenStart && tk.index < c.tokenEnd));
+  return (
+    <div class="tab-body" ref={fadeWhenClipped}>
+      <Show when={props.line.note}>
+        <p class="line-note">{props.line.note}</p>
+      </Show>
+      <Show when={a().chunks.length}>
+        <ul class="phrase-list">
+          <For each={a().chunks}>
+            {(c) => (
+              <li
+                class={`c${c.index % CHUNK_COLORS}`}
+                classList={{ hot: props.hot === c.index }}
+                onMouseEnter={() => props.onHot(c.index)}
+                onMouseLeave={() => props.onHot(null)}
+                onClick={() => props.onSelect(c.index)}
+              >
+                <span class="dot" />
+                <span class="pl-role">{c.chunk.role}</span>
+                <span class="pl-ja">{c.chunk.ja}</span>
+                <span class="pl-zh">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
+                <span class="pl-note">{c.chunk.note}</span>
+                <IconArrow />
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
+      <Show when={loose().length}>
+        <Words tokens={loose()} picked={props.picked} onPick={props.onPick} />
+      </Show>
+      <Show when={across().length}>
+        <div>
+          <h4>{t(a().chunks.length ? "detail.lineGrammar" : "detail.points")}</h4>
+          <ul class="grammar-refs">
+            <For each={across()}>{(g) => <GrammarRow g={g} line={props.line} onFocus={props.onFocus} />}</For>
+          </ul>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+/** One phrase: what it does in the sentence, its words, the grammar it touches. */
+function Phrase(props: {
+  c: ResolvedChunk;
+  line: Line;
+  analysis: LineAnalysis;
+  picked: number | null;
+  onPick: (i: number | null) => void;
+  onFocus: (r: [number, number] | null) => void;
+}) {
+  const tokens = () => props.analysis.tokens.slice(props.c.tokenStart, props.c.tokenEnd);
+  const grammar = createMemo(() => ordered(props.analysis.grammar.filter((g) => touches(g, props.c))));
+  const zh = () => props.c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…");
+  return (
+    <div class={`tab-body phrase c${props.c.index % CHUNK_COLORS}`} ref={fadeWhenClipped}>
+      <div class="phrase-head">
+        <span class="pl-role">{props.c.chunk.role}</span>
+        <span class="ph-ja">{props.c.chunk.ja}</span>
+        <Show when={zh()}>
+          <span class="ph-zh">{zh()}</span>
+        </Show>
+      </div>
+      <Show when={props.c.chunk.note}>
+        <p class="line-note">{props.c.chunk.note}</p>
+      </Show>
+      <div class="phrase-cols" classList={{ single: !grammar().length }}>
+        <div>
+          <h4>{t("detail.words")}</h4>
+          <Words tokens={tokens()} picked={props.picked} onPick={props.onPick} />
+        </div>
+        <Show when={grammar().length}>
+          <div>
+            <h4>{t("detail.points")}</h4>
+            <ul class="grammar-refs">
+              <For each={grammar()}>{(g) => <GrammarRow g={g} line={props.line} onFocus={props.onFocus} />}</For>
+            </ul>
+          </div>
+        </Show>
+      </div>
+    </div>
+  );
+}
+
+function Words(props: { tokens: ResolvedToken[]; picked: number | null; onPick: (i: number | null) => void }) {
+  return (
+    <div class="words">
+      <For each={props.tokens}>
+        {(tk) => <WordCard t={tk} picked={props.picked === tk.index} onPick={() => props.onPick(props.picked === tk.index ? null : tk.index)} />}
+      </For>
     </div>
   );
 }

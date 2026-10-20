@@ -1,7 +1,9 @@
 // On-disk library shared with the CLI (`kotone add`):
 //   ~/Library/Application Support/Kotone/songs/<id>/song.json
+//   ~/Library/Application Support/Kotone/songs/<id>/cover.jpg|png   (found with the lyrics)
 //   ~/Library/Application Support/Kotone/favorites.json
-//   ~/Library/Application Support/Kotone/state.json   { "audio": { "<song id>": "/path/to/file" } }
+//   ~/Library/Application Support/Kotone/state.json   { "audio": { "<song id>": "/path/to/file" },
+//                                                       "spotify": { "<song id>": "spotify:track:…" } }
 
 import Foundation
 
@@ -25,7 +27,8 @@ final class Library {
     try? fm.createDirectory(at: songsDir, withIntermediateDirectories: true)
   }
 
-  /// `{ songs: [{ id, json, audio }], links: { id: path } }` — `links` covers bundled demo songs too.
+  /// `{ songs: [{ id, json, audio }], links: { id: path }, covers: { id: version }, spotify: { id: uri } }`
+  /// — everything but `songs` includes bundled demo songs, whose folder may hold nothing but a cover.
   func list() -> [String: Any] {
     let links = audioLinks()
     let ids = (try? fm.contentsOfDirectory(atPath: songsDir.path))?.sorted() ?? []
@@ -44,14 +47,41 @@ final class Library {
       if audio is NSNull, let linked = links[id] { audio = linked }
       return ["id": id, "json": json, "audio": audio]
     }
-    return ["songs": songs, "links": links]
+    var covers: [String: Int] = [:]
+    for id in ids {
+      if let file = coverFile(id), let date = (try? fm.attributesOfItem(atPath: file.path))?[.modificationDate] as? Date {
+        covers[id] = Int(date.timeIntervalSince1970)
+      }
+    }
+    return ["songs": songs, "links": links, "covers": covers, "spotify": readState()["spotify"] as? [String: String] ?? [:]]
   }
 
-  func linkAudio(songId: String, path: String) {
+  func coverFile(_ id: String) -> URL? {
+    guard id.range(of: "^[a-z0-9][a-z0-9-]*$", options: .regularExpression) != nil else { return nil }
+    return ["jpg", "png"].map { songsDir.appendingPathComponent(id).appendingPathComponent("cover.\($0)") }
+      .first { fm.fileExists(atPath: $0.path) }
+  }
+
+  func saveCover(id: String, base64: String, type: String) throws {
+    guard id.range(of: "^[a-z0-9][a-z0-9-]*$", options: .regularExpression) != nil, ["jpg", "png"].contains(type),
+      let data = Data(base64Encoded: base64)
+    else { throw failure(L("封面数据无效", "Invalid cover data")) }
+    let dir = songsDir.appendingPathComponent(id)
+    try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    for ext in ["jpg", "png"] { try? fm.removeItem(at: dir.appendingPathComponent("cover.\(ext)")) }
+    try data.write(to: dir.appendingPathComponent("cover.\(type)"), options: .atomic)
+  }
+
+  func linkAudio(songId: String, path: String) { setLink("audio", songId, path) }
+
+  /// The Spotify track a song plays as, remembered once it has been heard there.
+  func linkSpotify(songId: String, uri: String) { setLink("spotify", songId, uri) }
+
+  private func setLink(_ kind: String, _ songId: String, _ value: String) {
     var state = readState()
-    var audio = state["audio"] as? [String: String] ?? [:]
-    audio[songId] = path
-    state["audio"] = audio
+    var links = state[kind] as? [String: String] ?? [:]
+    links[songId] = value
+    state[kind] = links
     if let data = try? JSONSerialization.data(withJSONObject: state, options: [.prettyPrinted, .sortedKeys]) {
       try? data.write(to: stateFile, options: .atomic)
     }

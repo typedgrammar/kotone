@@ -59,7 +59,7 @@ const search = createRoot(() => {
   const want = () => {
     const s = targetSong();
     if (!s || !target()) return undefined;
-    return { title: s.title, artist: s.artist, duration: app.player.loaded === s.id ? app.player.duration || undefined : undefined };
+    return { title: s.title, artist: s.artist, duration: app.playingId() === s.id ? app.duration() || undefined : undefined };
   };
   const ranked = (hits: SongHit[]) => {
     const w = want();
@@ -251,7 +251,7 @@ function Preview(props: { hitRef: string }) {
     setBusy(true);
     setError("");
     try {
-      await app.saveSong(song, mode === "merge");
+      await app.saveSong(song, mode === "merge", f.ref);
     } catch (e) {
       setError(lyricsErrorText(e));
     } finally {

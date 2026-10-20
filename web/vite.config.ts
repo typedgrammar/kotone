@@ -4,7 +4,7 @@ import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import solid from "vite-plugin-solid";
 import { libraryHome } from "../cli/home.ts";
-import { fetchHttp, LYRIC_HOSTS, type HttpRequest } from "../core/lyrics/index.ts";
+import { allowedHost, fetchHttp, type HttpRequest } from "../core/lyrics/index.ts";
 
 const HOME = libraryHome();
 
@@ -67,6 +67,9 @@ function devAgent(server: import("vite").ViteDevServer) {
   });
 }
 
+const coverFile = (id: string) =>
+  ["jpg", "png"].map((ext) => path.join(HOME, "songs", id, `cover.${ext}`)).find((f) => fs.existsSync(f)) ?? null;
+
 // In `pnpm dev` (plain browser) expose the same library the macOS app reads, so songs added
 // with `kotone add` show up after a reload, and stand in for the native lyric download / save.
 function devLibrary(): Plugin {
@@ -78,7 +81,7 @@ function devLibrary(): Plugin {
       server.middlewares.use("/__fetch", async (req, res) => {
         try {
           const r = JSON.parse(await body(req)) as HttpRequest;
-          if (!LYRIC_HOSTS.includes(new URL(r.url).host)) throw new Error("不允许访问这个地址");
+          if (!allowedHost(new URL(r.url).host)) throw new Error("不允许访问这个地址");
           const out = await fetchHttp(r);
           res.setHeader("content-type", "application/json");
           res.end(JSON.stringify({ status: out.status, body: Buffer.from(out.body).toString("base64") }));
@@ -103,11 +106,37 @@ function devLibrary(): Plugin {
         }
         const dir = path.join(HOME, "songs");
         const ids = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
-        const records = ids
+        const songs = ids
           .filter((id) => fs.existsSync(path.join(dir, id, "song.json")))
           .map((id) => ({ id, json: fs.readFileSync(path.join(dir, id, "song.json"), "utf8") }));
+        const covers = Object.fromEntries(
+          ids.flatMap((id) => {
+            const file = coverFile(id);
+            return file ? [[id, Math.floor(fs.statSync(file).mtimeMs / 1000)]] : [];
+          }),
+        );
         res.setHeader("content-type", "application/json");
-        res.end(JSON.stringify(records));
+        res.end(JSON.stringify({ songs, covers }));
+      });
+      // album art: GET serves songs/<id>/cover.jpg|png, POST ?type=jpg|png stores it
+      server.middlewares.use("/__cover", async (req, res) => {
+        const url = new URL(req.url ?? "/", "http://dev");
+        const id = url.pathname.slice(1);
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return void ((res.statusCode = 400), res.end());
+        if (req.method === "POST") {
+          const type = url.searchParams.get("type");
+          if (type !== "jpg" && type !== "png") return void ((res.statusCode = 400), res.end("type"));
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          fs.mkdirSync(path.join(HOME, "songs", id), { recursive: true });
+          for (const ext of ["jpg", "png"]) fs.rmSync(path.join(HOME, "songs", id, `cover.${ext}`), { force: true });
+          fs.writeFileSync(path.join(HOME, "songs", id, `cover.${type}`), Buffer.concat(chunks));
+          return res.end("ok");
+        }
+        const file = coverFile(id);
+        if (!file) return void ((res.statusCode = 404), res.end());
+        res.setHeader("content-type", file.endsWith(".png") ? "image/png" : "image/jpeg");
+        res.end(fs.readFileSync(file));
       });
     },
   };

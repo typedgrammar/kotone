@@ -4,8 +4,12 @@
 import Foundation
 
 enum Net {
-  /// Keep in sync with LYRIC_HOSTS in core/lyrics/index.ts.
-  static let hosts: Set<String> = ["music.163.com", "u.y.qq.com", "c.y.qq.com", "mobiles.kugou.com", "lyrics.kugou.com", "lrclib.net"]
+  /// Keep in sync with LYRIC_HOSTS / COVER_HOSTS in core/lyrics/index.ts; a leading dot allows subdomains.
+  static let hosts = [
+    "music.163.com", "u.y.qq.com", "c.y.qq.com", "mobiles.kugou.com", "lyrics.kugou.com", "lrclib.net",
+    "itunes.apple.com", ".mzstatic.com", ".music.126.net",
+  ]
+  static func allowed(_ host: String) -> Bool { hosts.contains { $0.hasPrefix(".") ? host.hasSuffix($0) : host == $0 } }
 
   private static let session: URLSession = {
     let config = URLSessionConfiguration.ephemeral
@@ -17,7 +21,7 @@ enum Net {
   /// `{ url, method, headers, body }` → `{ status, body: base64 }`
   static func fetch(_ p: [String: Any], done: @escaping (Any?, String?) -> Void) {
     guard let s = p["url"] as? String, let url = URL(string: s), url.scheme == "https",
-      let host = url.host, hosts.contains(host)
+      let host = url.host, allowed(host)
     else { return done(nil, L("不允许访问这个地址", "This address isn't allowed")) }
     var req = URLRequest(url: url)
     req.httpMethod = p["method"] as? String ?? "GET"

@@ -1,9 +1,12 @@
-import { batch, createMemo, createRoot, createSignal } from "solid-js";
+import { batch, createEffect, createMemo, createRoot, createSignal, on } from "solid-js";
 import { createStore, produce } from "solid-js/store";
+import { findCover } from "../../core/lyrics/cover.ts";
+import { pickTrack, songForTrack } from "../../core/spotify.ts";
 import type { Favorites, Line, Song } from "../../core/types.ts";
-import { bridge, songJson, type SongRecord } from "./bridge.ts";
+import { bridge, songJson, type SongRecord, type SpotifyState } from "./bridge.ts";
+import { revealLine } from "./reveal.ts";
 
-export type View = "lyrics" | "favorites" | "grammar" | "vocab" | "search";
+export type View = "library" | "lyrics" | "favorites" | "grammar" | "vocab" | "search";
 
 /** Opens the lyric search with a query, and the song the download should complete */
 export interface SearchSeed {
@@ -59,31 +62,113 @@ export const app = createRoot(() => {
   const favKeys = createMemo(() => new Set(favorites.lines.map((f) => `${f.songId}/${f.lineId}`)));
   const isFav = (songId: string, lineId: string) => favKeys().has(`${songId}/${lineId}`);
 
-  // ---- playback ----------------------------------------------------------------------
+  // ---- playback: the Spotify app, or a linked local file as the fallback -------------------
   const [player, setPlayer] = createStore({
-    loaded: null as string | null, // song id whose audio is loaded
+    loaded: null as string | null, // song id whose local audio is loaded
     playing: false,
     duration: 0,
     base: 0, // time at `at`
     at: 0, // performance.now() of the last native update
     error: "",
   });
+  bridge.onEvent((e) => {
+    if (e.type === "state") setPlayer({ playing: e.playing, duration: e.duration || player.duration, base: e.time, at: performance.now(), error: "" });
+    else if (e.type === "ended") setPlayer({ playing: false });
+    else setPlayer({ error: e.message, playing: false });
+  });
+
+  const [spotify, setSpotify] = createStore<SpotifyState & { at: number }>({ installed: false, running: false, at: 0 });
+  /** Songs whose Spotify track is being looked up, or wasn't found */
+  const [lookup, setLookup] = createStore<Record<string, "searching" | "missing" | undefined>>({});
+  bridge.spotify.onState((s) => {
+    const running = s.running && !s.error;
+    setSpotify({
+      installed: s.installed,
+      running: s.running,
+      error: s.error,
+      state: running ? s.state : undefined,
+      position: s.position ?? 0,
+      trackId: running ? s.trackId : undefined,
+      name: s.name,
+      artist: s.artist,
+      duration: s.duration,
+      artwork: s.artwork,
+      at: performance.now(),
+    });
+  });
+  bridge.spotify.refresh();
+
+  /** The library song Spotify is on, remembering the track the first time it's heard */
+  const spotifySong = createMemo(() => {
+    if (!spotify.running || !spotify.trackId) return null;
+    const refs = records().flatMap((r) => (r.song ? [{ id: r.song.id, title: r.song.title, artist: r.song.artist, spotify: r.spotify }] : []));
+    const track = { trackId: spotify.trackId, name: spotify.name ?? "", artist: spotify.artist ?? "", duration: spotify.duration };
+    return songForTrack(refs, track);
+  });
+  const remember = (songId: string, uri: string) => {
+    setRecords((rs) => rs.map((r) => (r.song?.id === songId ? { ...r, spotify: uri } : r)));
+    void bridge.linkSpotify(songId, uri);
+  };
+  createEffect(
+    on(spotifySong, (hit) => {
+      if (hit && !hit.linked) remember(hit.id, spotify.trackId!);
+    }),
+  );
+
+  /** The track a song plays as: remembered, or found in Spotify's catalogue (then remembered) */
+  async function spotifyUri(rec: SongRecord | undefined): Promise<string | null> {
+    const song = rec?.song;
+    if (!song) return null;
+    if (rec.spotify) return rec.spotify;
+    if (lookup[song.id] === "searching") return null;
+    setLookup(song.id, "searching");
+    try {
+      const track = pickTrack(await bridge.spotify.search(`${song.title} ${song.artist}`), song);
+      setLookup(song.id, track ? undefined : "missing");
+      if (track) remember(song.id, track.uri);
+      return track?.uri ?? null;
+    } catch {
+      setLookup(song.id, undefined);
+      return null;
+    }
+  }
+  // look the current song up ahead of time so pressing play starts it at once
+  createEffect(() => {
+    const rec = current();
+    if (spotify.installed && rec?.song && !rec.spotify && !lookup[rec.song.id]) void spotifyUri(rec);
+  });
+  // follow Spotify: a new track that's in the library becomes the current song
+  createEffect(
+    on(
+      () => spotifySong()?.id,
+      (id, prev) => {
+        if (id && id !== prev && id !== currentId()) actions.openSong(id);
+      },
+      { defer: true },
+    ),
+  );
+
+  /** Which source drives the lyrics: whatever is playing, else Spotify's song, else the loaded file */
+  const source = createMemo<"spotify" | "file" | null>(() =>
+    player.playing ? "file" : spotifySong() ? "spotify" : player.loaded ? "file" : null,
+  );
+  const playingId = () => (source() === "spotify" ? spotifySong()!.id : source() === "file" ? player.loaded : null);
+  const playing = () => (source() === "spotify" ? spotify.state === "playing" : player.playing);
+  const duration = () => (source() === "spotify" ? (spotify.duration ?? 0) : player.duration);
+
   const [tick, setTick] = createSignal(0);
   let raf = 0;
   const loop = () => {
     setTick(performance.now());
-    raf = player.playing ? requestAnimationFrame(loop) : 0;
+    raf = playing() ? requestAnimationFrame(loop) : 0;
   };
+  createEffect(() => {
+    if (playing() && !raf) raf = requestAnimationFrame(loop);
+  });
   const time = createMemo(() => {
     tick();
-    return player.playing ? Math.min(player.base + (performance.now() - player.at) / 1000, player.duration || Infinity) : player.base;
-  });
-  bridge.onEvent((e) => {
-    if (e.type === "state") {
-      setPlayer({ playing: e.playing, duration: e.duration || player.duration, base: e.time, at: performance.now(), error: "" });
-      if (e.playing && !raf) raf = requestAnimationFrame(loop);
-    } else if (e.type === "ended") setPlayer({ playing: false });
-    else setPlayer({ error: e.message, playing: false });
+    const [base, at, end] = source() === "spotify" ? [spotify.position ?? 0, spotify.at, spotify.duration] : [player.base, player.at, player.duration];
+    return playing() ? Math.min(base + (performance.now() - at) / 1000, end || Infinity) : base;
   });
 
   async function ensureLoaded(rec: SongRecord | undefined) {
@@ -92,12 +177,39 @@ export const app = createRoot(() => {
     setPlayer({ loaded: rec.song.id, base: 0, at: performance.now(), duration: 0, playing: false, error: "" });
   }
 
+  // ---- covers: found with the lyrics; songs without one get a try once per session -----------
+  const [coverBusy, setCoverBusy] = createSignal<ReadonlySet<string>>(new Set());
+  const coverTried = new Set<string>();
+  // the lyrics' ref, as sourceNote() wrote it ("歌词来自网易云（netease:123）")
+  const refIn = (source?: string) => source?.match(/\b(?:netease|qq|kugou|lrclib):[\w-]+/)?.[0];
+
+  async function findCoverFor(song: Song, ref = refIn(song.source)) {
+    if (coverTried.has(song.id)) return;
+    coverTried.add(song.id);
+    setCoverBusy((s) => new Set(s).add(song.id));
+    try {
+      const cover = await findCover(bridge.http, { title: song.title, artist: song.artist, ref });
+      if (cover) {
+        await bridge.saveCover(song.id, cover);
+        await actions.refresh();
+      }
+    } catch {
+      // offline or the library is read-only: the placeholder stays
+    } finally {
+      setCoverBusy((s) => {
+        const next = new Set(s);
+        next.delete(song.id);
+        return next;
+      });
+    }
+  }
+
   const actions = {
     async refresh() {
       const prev = new Map(records().map((r) => [r.id, r]));
       const list = (await bridge.listSongs()).map((r) => {
         const p = prev.get(r.id);
-        return p && p.raw === r.raw && p.audio === r.audio ? p : r;
+        return p && p.raw === r.raw && p.audio === r.audio && p.cover === r.cover ? p : r;
       });
       setRecords(list);
       if (!currentId() || !list.some((r) => (r.song?.id ?? r.id) === currentId())) {
@@ -117,11 +229,13 @@ export const app = createRoot(() => {
       batch(() => {
         if (currentId() !== songId) actions.openSong(songId);
         setView("lyrics");
+        setExpanded(null);
+      });
+      // land the line near the top, then open its breakdown below it
+      requestAnimationFrame(() => {
+        revealLine(lineId, "start");
         setExpanded(lineId);
       });
-      requestAnimationFrame(() =>
-        document.getElementById(`line-${lineId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
-      );
     },
     openGrammar(id: string) {
       batch(() => {
@@ -135,14 +249,23 @@ export const app = createRoot(() => {
         setView("search");
       });
     },
-    /** Write a song made from downloaded lyrics and show it */
-    async saveSong(song: Song, overwrite: boolean) {
+    /** Write a song made from downloaded lyrics and show it; its cover follows in the background */
+    async saveSong(song: Song, overwrite: boolean, ref?: string) {
       await bridge.saveSong(song, overwrite);
       await actions.refresh();
       batch(() => {
         actions.openSong(song.id);
         setView("lyrics");
       });
+      const rec = records().find((r) => r.song?.id === song.id);
+      if (!rec?.cover) {
+        coverTried.delete(song.id);
+        void findCoverFor(song, ref);
+      }
+    },
+    /** Look for covers of songs that have none (one at a time, each once per session) */
+    async fillCovers() {
+      for (const r of records()) if (r.song && !r.cover) await findCoverFor(r.song);
     },
     /** Replace a song in place (keeping unchanged line objects) and write it to the library. */
     async updateSong(song: Song) {
@@ -167,21 +290,52 @@ export const app = createRoot(() => {
       if (!audio) return;
       setRecords((rs) => rs.map((r) => (r === rec ? { ...r, audio } : r)));
       setPlayer({ loaded: null });
+      if (spotify.state === "playing") bridge.spotify.pause();
       await ensureLoaded(current());
       bridge.play();
     },
     async togglePlay() {
       const rec = current();
-      if (!rec?.audio) return void actions.linkAudio();
-      await ensureLoaded(rec);
-      if (player.playing) bridge.pause();
-      else bridge.play();
+      if (!rec?.song) return;
+      if (source() === "spotify" && spotifySong()?.id === rec.song.id) return bridge.spotify.toggle();
+      if (spotify.installed && lookup[rec.song.id] !== "missing") {
+        const uri = await spotifyUri(rec);
+        if (uri) {
+          if (player.playing) bridge.pause();
+          return bridge.spotify.play(uri);
+        }
+      }
+      if (rec.audio) {
+        await ensureLoaded(rec);
+        if (player.playing) return bridge.pause();
+        if (spotify.state === "playing") bridge.spotify.pause();
+        return bridge.play();
+      }
+      // found nowhere on Spotify: the player bar offers a local file instead
+      if (!spotify.installed) return actions.linkAudio();
     },
     async seek(t: number, play = false) {
-      await ensureLoaded(current());
-      bridge.seek(Math.max(0, t));
-      setPlayer({ base: Math.max(0, t), at: performance.now() });
-      if (play && !player.playing) bridge.play();
+      const rec = current();
+      t = Math.max(0, t);
+      if (source() === "spotify" && spotifySong()?.id === rec?.song?.id) {
+        bridge.spotify.seek(t);
+        setSpotify({ position: t, at: performance.now() });
+        if (play && spotify.state !== "playing") bridge.spotify.toggle();
+        return;
+      }
+      const uri = spotify.installed && rec?.song && lookup[rec.song.id] !== "missing" ? await spotifyUri(rec) : null;
+      if (uri) {
+        if (player.playing) bridge.pause();
+        return bridge.spotify.play(uri, t);
+      }
+      if (!rec?.audio) return actions.togglePlay();
+      await ensureLoaded(rec);
+      bridge.seek(t);
+      setPlayer({ base: t, at: performance.now() });
+      if (play && !player.playing) {
+        if (spotify.state === "playing") bridge.spotify.pause();
+        bridge.play();
+      }
     },
   };
 
@@ -205,7 +359,15 @@ export const app = createRoot(() => {
     setSettings,
     favorites,
     isFav,
+    coverBusy,
     player,
+    spotify,
+    spotifySong,
+    spotifyLookup: lookup,
+    source,
+    playingId,
+    playing,
+    duration,
     time,
     ...actions,
   };

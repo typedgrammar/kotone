@@ -2,7 +2,9 @@
 // (AVPlayer, file panels, the on-disk library); in a plain browser it falls back to web APIs so
 // `pnpm dev` works too.
 
+import type { Cover } from "../../core/lyrics/cover.ts";
 import type { Http } from "../../core/lyrics/index.ts";
+import type { SpotifyTrack } from "../../core/spotify.ts";
 import { base64ToBytes } from "../../core/lyrics/sources.ts";
 import type { Favorites, Song } from "../../core/types.ts";
 
@@ -15,7 +17,45 @@ export interface SongRecord {
   bundled?: boolean;
   /** The JSON as read, to skip re-rendering unchanged songs on refresh */
   raw?: string;
+  /** URL of the album art saved with the song, versioned so a replaced cover reloads */
+  cover?: string | null;
+  /** The Spotify track (`spotify:track:…`) this song was heard as */
+  spotify?: string | null;
 }
+
+/** The Spotify desktop app's player, as macos/Sources/Spotify.swift reads it */
+export interface SpotifyState {
+  installed: boolean;
+  running: boolean;
+  state?: "playing" | "paused" | "stopped";
+  /** Seconds */
+  position?: number;
+  trackId?: string;
+  name?: string;
+  artist?: string;
+  album?: string;
+  /** Seconds */
+  duration?: number;
+  artwork?: string;
+  /** i18n key or message */
+  error?: string;
+}
+
+export interface SpotifyControl {
+  /** Ask for a fresh state (it arrives through onState) */
+  refresh(): void;
+  toggle(): void;
+  pause(): void;
+  seek(time: number): void;
+  /** A track by URI, optionally from a position; no URI resumes */
+  play(uri?: string, at?: number): void;
+  /** Spotify's catalogue, searched in the background (nothing shows, nothing takes focus) */
+  search(query: string): Promise<SpotifyTrack[]>;
+  onState(cb: (s: SpotifyState) => void): void;
+}
+
+// served next to the page: kotone://app/__cover/<id> natively, the dev middleware in a browser
+const coverUrl = (id: string, version: number | string) => `./__cover/${id}?v=${version}`;
 
 export type PlayerEvent =
   | { type: "state"; time: number; duration: number; playing: boolean }
@@ -49,6 +89,11 @@ export interface Bridge {
   revealLibrary(): Promise<void>;
   /** Write a song into the library; an existing id is only replaced with `overwrite` */
   saveSong(song: Song, overwrite: boolean): Promise<void>;
+  /** Store a song's album art in its library folder (bundled songs get a folder for it too) */
+  saveCover(id: string, cover: Cover): Promise<void>;
+  spotify: SpotifyControl;
+  /** Remember which Spotify track a song is */
+  linkSpotify(songId: string, uri: string): Promise<void>;
   /** HTTP for the lyric sources, which need headers a page can't send */
   http: Http;
   agent: AgentProcess;
@@ -63,6 +108,12 @@ export interface Bridge {
   seek(time: number): void;
   onEvent(cb: (e: PlayerEvent) => void): void;
 }
+
+const bytesToBase64 = (b: Uint8Array) => {
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
+};
 
 // Demo songs ship inside the bundle; library songs with the same id override them.
 export const songJson = (song: Song) => JSON.stringify(song, null, 2) + "\n";
@@ -93,6 +144,7 @@ function mergeRecords(library: SongRecord[]): SongRecord[] {
 type Listener = (e: PlayerEvent) => void;
 type AgentEvent = { type: "agent"; line: string } | { type: "agentExit"; code: number; stderr: string };
 type UiEvent = { type: "openSettings" };
+type SpotifyEvent = { type: "spotify" } & SpotifyState;
 
 /** Fan agent events out to line / exit listeners. */
 function agentHub() {
@@ -113,9 +165,16 @@ function nativeBridge(handler: { postMessage(m: unknown): Promise<unknown> }): B
   const listeners: Listener[] = [];
   const hub = agentHub();
   const settings: (() => void)[] = [];
+  const spotifyListeners: ((s: SpotifyState) => void)[] = [];
   (window as unknown as { __kotone: unknown }).__kotone = {
-    emit: (e: PlayerEvent | AgentEvent | UiEvent) =>
-      e.type === "agent" || e.type === "agentExit" ? hub.dispatch(e) : e.type === "openSettings" ? settings.forEach((f) => f()) : listeners.forEach((l) => l(e)),
+    emit: (e: PlayerEvent | AgentEvent | UiEvent | SpotifyEvent) =>
+      e.type === "agent" || e.type === "agentExit"
+        ? hub.dispatch(e)
+        : e.type === "openSettings"
+          ? settings.forEach((f) => f())
+          : e.type === "spotify"
+            ? spotifyListeners.forEach((f) => f(e))
+            : listeners.forEach((l) => l(e)),
   };
   return {
     native: true,
@@ -127,18 +186,36 @@ function nativeBridge(handler: { postMessage(m: unknown): Promise<unknown> }): B
       onLine: hub.onLine,
       onExit: hub.onExit,
     },
+    spotify: {
+      refresh: () => void call("spotify.refresh"),
+      toggle: () => void call("spotify.toggle"),
+      pause: () => void call("spotify.pause"),
+      seek: (time) => void call("spotify.seek", { time }),
+      play: (uri, at) => void call("spotify.play", { uri, at }),
+      search: async (query) => (await call<SpotifyTrack[] | null>("spotify.search", { query })) ?? [],
+      onState: (cb) => void spotifyListeners.push(cb),
+    },
+    linkSpotify: async (songId, uri) => void (await call("library.linkSpotify", { songId, uri })),
     openURL: (url) => void call("app.openURL", { url }),
     onOpenSettings: (cb) => void settings.push(cb),
     setLanguage: (lang) => void call("app.setLanguage", { lang }),
     async listSongs() {
       // `links` holds audio picked in the app, including for bundled demo songs
-      const { songs, links } = await call<{ songs: { id: string; json: string; audio: string | null }[]; links: Record<string, string> }>(
-        "library.list",
-      );
-      return mergeRecords(songs.map((r) => parseRecord(r.id, r.json, { audio: r.audio }))).map((r) => ({
-        ...r,
-        audio: r.audio ?? links[r.song?.id ?? r.id] ?? null,
-      }));
+      const { songs, links, covers, spotify } = await call<{
+        songs: { id: string; json: string; audio: string | null }[];
+        links: Record<string, string>;
+        covers: Record<string, number>;
+        spotify: Record<string, string>;
+      }>("library.list");
+      return mergeRecords(songs.map((r) => parseRecord(r.id, r.json, { audio: r.audio }))).map((r) => {
+        const id = r.song?.id ?? r.id;
+        return {
+          ...r,
+          audio: r.audio ?? links[id] ?? null,
+          cover: covers[id] ? coverUrl(id, covers[id]) : null,
+          spotify: spotify[id] ?? null,
+        };
+      });
     },
     async loadFavorites() {
       const s = await call<string | null>("favorites.load");
@@ -151,6 +228,7 @@ function nativeBridge(handler: { postMessage(m: unknown): Promise<unknown> }): B
     importSong: () => call<string | null>("library.import"),
     revealLibrary: () => call("library.reveal"),
     saveSong: async (song, overwrite) => void (await call("library.save", { json: songJson(song), overwrite })),
+    saveCover: async (id, cover) => void (await call("library.saveCover", { id, type: cover.type, base64: bytesToBase64(cover.bytes) })),
     async http(req) {
       const r = await call<{ status: number; body: string }>("net.fetch", { ...req });
       return { status: r.status, body: base64ToBytes(r.body) };
@@ -197,19 +275,37 @@ function webBridge(): Bridge {
       onLine: hub.onLine,
       onExit: hub.onExit,
     },
+    // a page can't script the Spotify app; the browser preview plays local files only
+    spotify: {
+      refresh: () => {},
+      toggle: () => {},
+      pause: () => {},
+      seek: () => {},
+      play: () => {},
+      search: async () => [],
+      onState: () => {},
+    },
+    linkSpotify: async () => {},
     openURL: (url) => void window.open(url, "_blank"),
     onOpenSettings: () => {},
     setLanguage: () => {},
     async listSongs() {
       let library: SongRecord[] = [];
+      let covers: Record<string, number> = {};
       try {
         const res = await fetch("./__library");
-        if (res.ok && res.headers.get("content-type")?.includes("json"))
-          library = ((await res.json()) as { id: string; json: string }[]).map((r) => parseRecord(r.id, r.json));
+        if (res.ok && res.headers.get("content-type")?.includes("json")) {
+          const out = (await res.json()) as { songs: { id: string; json: string }[]; covers: Record<string, number> };
+          library = out.songs.map((r) => parseRecord(r.id, r.json));
+          covers = out.covers;
+        }
       } catch {
         // static build without the dev middleware
       }
-      return mergeRecords(library).map((r) => ({ ...r, audio: links.get(r.id) ?? null }));
+      return mergeRecords(library).map((r) => {
+        const id = r.song?.id ?? r.id;
+        return { ...r, audio: links.get(r.id) ?? null, cover: covers[id] ? coverUrl(id, covers[id]) : null };
+      });
     },
     async loadFavorites() {
       try {
@@ -249,6 +345,10 @@ function webBridge(): Bridge {
     async saveSong(song, overwrite) {
       const res = await fetch("./__library", { method: "POST", body: JSON.stringify({ json: songJson(song), overwrite }) });
       if (!res.ok) throw new Error((await res.text()) || "search.err.save");
+    },
+    async saveCover(id, cover) {
+      const res = await fetch(`./__cover/${id}?type=${cover.type}`, { method: "POST", body: cover.bytes as BodyInit });
+      if (!res.ok) throw new Error(await res.text());
     },
     async http(req) {
       const res = await fetch("./__fetch", { method: "POST", body: JSON.stringify(req) });

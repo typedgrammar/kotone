@@ -7,7 +7,7 @@ import { LyricsError, type Http, type HttpResponse, type Provider, type RawLyric
 
 const utf8 = new TextDecoder();
 
-function json<T>(r: HttpResponse, what: string): T {
+export function json<T>(r: HttpResponse, what: string): T {
   if (r.status === 404) throw new LyricsError("notFound", `${what}：没有找到`);
   if (r.status >= 400) throw new LyricsError("http", `${what}：请求失败（HTTP ${r.status}）`, { status: r.status });
   try {
@@ -17,7 +17,7 @@ function json<T>(r: HttpResponse, what: string): T {
   }
 }
 
-const qs = (params: Record<string, string | number>) =>
+export const qs = (params: Record<string, string | number>) =>
   Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join("&");
@@ -35,18 +35,18 @@ const joinArtists = (names: (string | undefined)[]) => names.filter(Boolean).joi
 
 // ---- NetEase Cloud Music: the public web API answers without eapi encryption ----------------
 
-const NE_HEADERS = {
+export const NE_HEADERS = {
   referer: "https://music.163.com/",
   "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
 };
 
-interface NeSong {
+export interface NeSong {
   id: number;
   name: string;
   ar?: { name: string }[];
   artists?: { name: string }[];
-  al?: { name: string };
-  album?: { name: string };
+  al?: { name: string; picUrl?: string };
+  album?: { name: string; picUrl?: string };
   dt?: number;
   duration?: number;
 }
@@ -57,7 +57,14 @@ const netease: Provider = {
     const j = json<{ code: number; result?: { songs?: NeSong[] } }>(await http({ url, headers: NE_HEADERS }), "网易云搜索");
     if (j.code !== 200) throw new LyricsError("api", `网易云搜索：错误码 ${j.code}`, { code: j.code });
     return (j.result?.songs ?? []).map((s) =>
-      hit("netease", { id: String(s.id), title: s.name, artist: joinArtists((s.ar ?? []).map((a) => a.name)), album: s.al?.name, duration: (s.dt ?? 0) / 1000 }),
+      hit("netease", {
+        id: String(s.id),
+        title: s.name,
+        artist: joinArtists((s.ar ?? []).map((a) => a.name)),
+        album: s.al?.name,
+        duration: (s.dt ?? 0) / 1000,
+        cover: s.al?.picUrl || undefined,
+      }),
     );
   },
   async fetch(http, id) {

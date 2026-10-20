@@ -26,6 +26,9 @@ export function Ruby(props: { segs: RubySeg[] }) {
   );
 }
 
+/** Width of a role label drawn as a tab, so a one-kana chunk is still wide enough for it. */
+const chipWidth = (role: string) => [...role].reduce((w, ch) => w + (ch.charCodeAt(0) > 0x2e80 ? 11 : 6.5), 18);
+
 const overlaps = (t: ResolvedToken, r?: [number, number] | null) => !!r && t.start >= 0 && t.start < r[1] && r[0] < t.end;
 
 interface Group {
@@ -54,6 +57,9 @@ export function JaLine(props: {
   hot?: number | null;
   onHot?: (i: number | null) => void;
   onToken?: (i: number) => void;
+  /** The chunk being looked at; the others dim */
+  selected?: number | null;
+  onChunk?: (i: number) => void;
 }) {
   const token = (t: ResolvedToken): JSX.Element => (
     <span
@@ -74,7 +80,14 @@ export function JaLine(props: {
               {(c) => (
                 <span
                   class={`chunk c${c().index % CHUNK_COLORS}`}
-                  classList={{ hot: props.hot === c().index }}
+                  classList={{
+                    hot: props.hot === c().index,
+                    sel: props.selected === c().index,
+                    dim: props.selected != null && props.selected !== c().index,
+                    clickable: !!props.onChunk,
+                  }}
+                  style={props.onChunk ? { "min-width": `${chipWidth(c().chunk.role)}px` } : undefined}
+                  onClick={props.onChunk ? (e) => (e.stopPropagation(), props.onChunk!(c().index)) : undefined}
                   onMouseEnter={() => props.onHot?.(c().index)}
                   onMouseLeave={() => props.onHot?.(null)}
                 >
@@ -91,7 +104,14 @@ export function JaLine(props: {
 }
 
 /** The translation with each chunk's fragments tinted in the chunk's colour. */
-export function ZhLine(props: { zh: string; analysis: LineAnalysis; hot?: number | null; onHot?: (i: number | null) => void }) {
+export function ZhLine(props: {
+  zh: string;
+  analysis: LineAnalysis;
+  hot?: number | null;
+  onHot?: (i: number | null) => void;
+  selected?: number | null;
+  onChunk?: (i: number) => void;
+}) {
   const parts = () => {
     const marks = props.analysis.chunks
       .flatMap((c) => c.zh.map(([s, e]) => ({ s, e, c: c.index })))
@@ -114,7 +134,8 @@ export function ZhLine(props: { zh: string; analysis: LineAnalysis; hot?: number
         ) : (
           <span
             class={`zfrag c${p.c % CHUNK_COLORS}`}
-            classList={{ hot: props.hot === p.c }}
+            classList={{ hot: props.hot === p.c, dim: props.selected != null && props.selected !== p.c, clickable: !!props.onChunk }}
+            onClick={props.onChunk ? (e) => (e.stopPropagation(), props.onChunk!(p.c!)) : undefined}
             onMouseEnter={() => props.onHot?.(p.c)}
             onMouseLeave={() => props.onHot?.(null)}
           >

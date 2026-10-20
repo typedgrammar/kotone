@@ -1,28 +1,48 @@
-// Draws AppIcon.icns (night-sky gradient, 言音 with its furigana ことね). Run: swift macos/make-icon.swift
+// Draws AppIcon.icns (night-sky gradient, a moon, a few stars and a white eighth note).
+// Run: swift macos/make-icon.swift build/AppIcon.iconset && iconutil -c icns build/AppIcon.iconset -o macos/AppIcon.icns
 import AppKit
+
+func circle(_ x: CGFloat, _ y: CGFloat, _ r: CGFloat) -> NSBezierPath {
+  NSBezierPath(ovalIn: NSRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r))
+}
+
+/// eighth note; (x, y) = centre of the head, k = scale
+func note(_ x: CGFloat, _ y: CGFloat, _ k: CGFloat) {
+  NSColor.white.setFill()
+  let head = NSBezierPath(ovalIn: NSRect(x: -110 * k, y: -78 * k, width: 220 * k, height: 156 * k))
+  var t = AffineTransform(translationByX: x, byY: y)
+  t.rotate(byDegrees: 22)
+  head.transform(using: t)
+  head.fill()
+  let sx = x + 82 * k
+  NSBezierPath(rect: NSRect(x: sx, y: y + 20 * k, width: 30 * k, height: 400 * k)).fill()
+  let flag = NSBezierPath()
+  flag.move(to: NSPoint(x: sx, y: y + 420 * k))
+  flag.curve(to: NSPoint(x: sx + 150 * k, y: y + 150 * k), controlPoint1: NSPoint(x: sx + 50 * k, y: y + 320 * k), controlPoint2: NSPoint(x: sx + 210 * k, y: y + 280 * k))
+  flag.curve(to: NSPoint(x: sx + 30 * k, y: y + 280 * k), controlPoint1: NSPoint(x: sx + 160 * k, y: y + 230 * k), controlPoint2: NSPoint(x: sx + 90 * k, y: y + 270 * k))
+  flag.close()
+  flag.fill()
+}
 
 func render(_ size: CGFloat) -> Data {
   let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size), pixelsHigh: Int(size), bitsPerSample: 8,
                              samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
   NSGraphicsContext.saveGraphicsState()
   NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-  let s = size / 1024
-  let tile = NSBezierPath(roundedRect: NSRect(x: 100 * s, y: 100 * s, width: 824 * s, height: 824 * s), xRadius: 186 * s, yRadius: 186 * s)
+  // draw on a 1024 canvas
+  let scale = NSAffineTransform()
+  scale.scale(by: size / 1024)
+  scale.concat()
+  let tile = NSBezierPath(roundedRect: NSRect(x: 100, y: 100, width: 824, height: 824), xRadius: 186, yRadius: 186)
   NSGradient(starting: NSColor(srgbRed: 0.35, green: 0.34, blue: 0.84, alpha: 1), ending: NSColor(srgbRed: 0.11, green: 0.10, blue: 0.29, alpha: 1))!
     .draw(in: tile, angle: 90)
   NSColor(srgbRed: 1, green: 0.91, blue: 0.64, alpha: 1).setFill()
-  NSBezierPath(ovalIn: NSRect(x: 698 * s, y: 718 * s, width: 88 * s, height: 88 * s)).fill()
-  for (x, y, r, a) in [(300.0, 794.0, 6.0, 0.7), (660.0, 614.0, 5.0, 0.6), (230.0, 604.0, 4.0, 0.5)] {
+  circle(720, 742, 50).fill()
+  for (x, y, r, a) in [(290.0, 780.0, 7.0, 0.7), (680.0, 560.0, 6.0, 0.55), (240.0, 560.0, 5.0, 0.5), (780.0, 420.0, 4.0, 0.45)] {
     NSColor(white: 1, alpha: a).setFill()
-    NSBezierPath(ovalIn: NSRect(x: (x - r) * s, y: (y - r) * s, width: 2 * r * s, height: 2 * r * s)).fill()
+    circle(x, y, r).fill()
   }
-  func text(_ str: String, font: String, size pt: CGFloat, color: NSColor, baseline: CGFloat, kern: CGFloat = 0) {
-    let attrs: [NSAttributedString.Key: Any] = [.font: NSFont(name: font, size: pt * s)!, .foregroundColor: color, .kern: kern * s]
-    let a = NSAttributedString(string: str, attributes: attrs)
-    a.draw(at: NSPoint(x: (1024 * s - a.size().width) / 2, y: baseline * s))
-  }
-  text("ことね", font: "HiraginoSans-W6", size: 84, color: NSColor(srgbRed: 0.81, green: 0.80, blue: 0.98, alpha: 1), baseline: 600, kern: 14)
-  text("言音", font: "HiraMinProN-W6", size: 320, color: .white, baseline: 220, kern: 8)
+  note(440, 340, 0.95)
   NSGraphicsContext.restoreGraphicsState()
   return rep.representation(using: .png, properties: [:])!
 }

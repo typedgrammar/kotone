@@ -1,15 +1,16 @@
-import { For, Show } from "solid-js";
+import { For, Show, type JSX } from "solid-js";
 import { bridge } from "../bridge.ts";
 import { t, type Key } from "../i18n.ts";
 import { app, type View } from "../state.ts";
-import { IconFolder, IconGear, IconPlus } from "./icons.tsx";
+import { IconBook, IconCards, IconFolder, IconGear, IconGrid, IconLyrics, IconMusic, IconPlus, IconSearch, IconStar } from "./icons.tsx";
 
-const NAV: [View, string, Key][] = [
-  ["lyrics", "歌", "nav.lyrics"],
-  ["favorites", "★", "nav.favorites"],
-  ["grammar", "文", "nav.grammar"],
-  ["vocab", "語", "nav.vocab"],
-  ["search", "探", "nav.search"],
+const NAV: [View, () => JSX.Element, Key][] = [
+  ["library", IconGrid, "nav.library"],
+  ["lyrics", IconLyrics, "nav.lyrics"],
+  ["favorites", IconStar, "nav.favorites"],
+  ["grammar", IconBook, "nav.grammar"],
+  ["vocab", IconCards, "nav.vocab"],
+  ["search", IconSearch, "nav.search"],
 ];
 
 export function Sidebar() {
@@ -17,9 +18,11 @@ export function Sidebar() {
     <aside class="sidebar">
       <nav class="nav">
         <For each={NAV}>
-          {([v, glyph, label]) => (
+          {([v, Icon, label]) => (
             <button classList={{ sel: app.view() === v }} onClick={() => app.setView(v)}>
-              <span class="glyph">{glyph}</span>
+              <span class="nav-icon">
+                <Icon />
+              </span>
               {t(label)}
               <Show when={v === "favorites" && app.favorites.lines.length}>
                 <span class="count">{app.favorites.lines.length}</span>
@@ -28,7 +31,7 @@ export function Sidebar() {
           )}
         </For>
       </nav>
-      <div class="side-title">{t("side.library")}</div>
+      <div class="side-title">{t("side.songs")}</div>
       <ul class="songs">
         <For each={app.records()}>
           {(r) => (
@@ -38,8 +41,15 @@ export function Sidebar() {
                 title={r.error ?? ""}
                 onClick={() => r.song && (app.openSong(r.song.id), app.setView("lyrics"))}
               >
-                <span class="s-title">{r.song?.title ?? r.id}</span>
-                <span class="s-artist">{r.song?.artist ?? t("side.unreadable")}</span>
+                <span class="s-thumb">
+                  <Show when={r.cover} fallback={<IconMusic />}>
+                    <img src={r.cover!} alt="" />
+                  </Show>
+                </span>
+                <span class="s-text">
+                  <span class="s-title">{r.song?.title ?? r.id}</span>
+                  <span class="s-artist">{r.song?.artist ?? t("side.unreadable")}</span>
+                </span>
               </button>
             </li>
           )}

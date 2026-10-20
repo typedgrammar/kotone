@@ -15,7 +15,7 @@
 |---|---|
 | ![语法大纲](docs/screenshots/grammar-outline.png) | ![深色](docs/screenshots/breakdown-dark.png) |
 
-UI 是 Solid，外壳是约 640 行的 Swift：系统自带的 WKWebView + AVPlayer（支持媒体键和控制中心“正在播放”）+ URLSession（下载歌词）+ 你本机的 Codex（标注），不打包浏览器内核，整个 App 不到 1 MB（一半是图标）。
+UI 是 Solid，外壳是一层薄薄的 Swift：系统自带的 WKWebView + 你本机的 Spotify（播放，备选 AVPlayer 放本地文件）+ URLSession（下载歌词）+ 你本机的 Codex（标注），不打包浏览器内核，整个 App 不到 1 MB（一半是图标）。
 
 界面支持中文和 English（设置 → 语言，默认跟随系统；菜单栏也会跟着切换）。歌词的翻译、讲解和语法大纲是写给中文母语学习者的，切换界面语言时保持中文。
 
@@ -30,7 +30,16 @@ pnpm dev          # 只在浏览器里调 UI（http://localhost:5173），读同
 pnpm test         # 变形引擎 / 注音 / 校验器 / CLI 的测试
 ```
 
-自带的示例是 YOASOBI《夜に駆ける》中的 **6 行摘录**（歌词有版权，仓库里不放全文）。点歌名下的“下载完整歌词”，选一个结果再点“补全《夜に駆ける》”，就会换成带时间轴的完整原文，已标注的几句照旧可以展开拆解；再点“标注整首歌”，边听边看其余句子陆续补上（见下一节）。点底部“关联音频文件…”选你自己的音频即可播放。
+自带的示例是 YOASOBI《夜に駆ける》中的 **6 行摘录**（歌词有版权，仓库里不放全文）。点歌名下的“下载完整歌词”，选一个结果再点“补全《夜に駆ける》”，就会换成带时间轴的完整原文，已标注的几句照旧可以展开拆解；再点“标注整首歌”，边听边看其余句子陆续补上（见下一节）。装了 Spotify 桌面版的话，直接点左下角的封面就能播放（见“用 Spotify 播放”）；没有的话点“关联音频文件…”选你自己的音频。
+
+## 用 Spotify 播放
+
+参考 LyricsX、SpotMenu 等开源客户端的做法，Kotone 把本机的 Spotify 桌面版当作播放器，所有操作都在 Kotone 里完成，Spotify 不会跳到前台：
+
+- **找歌**：Kotone 在一个不显示的 WebView 里打开 Spotify 自己的网页搜索，从页面的 API 返回里读出曲目（不需要开发者账号）；曲名和歌手都对得上才用，原版优先于 THE FIRST TAKE、翻奏等。找到的曲目记在资料库的 `state.json` 里，下次直接播放。打开一首歌时就会提前查好。
+- **播放与进度**：AppleScript 控制播放/暂停/跳转（点某句前面的 ▶ 从那句开始）；Spotify 的播放状态通知 + 每 1.5 秒读一次进度，歌词跟着高亮并滚到中间。Spotify 没开时会在后台隐藏启动。
+- **跟随**：在 Spotify（或手机遥控）里切到资料库里有的歌，Kotone 自动切过去。
+- 第一次播放时 macOS 会问是否允许 Kotone 控制 Spotify（系统设置 › 隐私与安全性 › 自动化）。Spotify 上没有的歌，可以照旧关联本地音频文件。
 
 快捷键：`空格` 播放/暂停 · `↑/↓`（`j/k`）逐句打开拆解 · `Esc` 收起 · `F` 注音 · `T` 译文。
 
@@ -101,7 +110,9 @@ kotone add yoru-ni-kakeru.song.json --audio ~/Music/夜に駆ける.m4a
 
 **翻译体系只接受 agent 生成的内容**：下载链路不请求、不解析、不保存任何平台译文，下载的数据结构里也没有译文字段；`init` / 补全生成的骨架 `zh` 一律为空，只有复用的已标注行带着当初 agent 写的 `zh`。双语 LRC 里的译文行会被丢弃。只保留逐行时间轴和原文；“作词：…”这类署名行和开头的“曲名 - 歌手”会被摘出来放进 `source`。逐字（卡拉OK）时间轴目前不用。
 
-这些接口需要浏览器页面发不了的请求头，所以 App 里的请求经由 Swift 的 URLSession 发出（只放行这几个域名，并跟随系统代理）；`pnpm dev` 时由开发服务器代理。CLI 会读取 `https_proxy` 等环境变量走代理。这些都是非官方接口，随时可能变化：某个来源失败时，界面里会在该来源下显示原因，其它来源不受影响。
+**封面**跟歌词一起自动下载（`core/lyrics/cover.ts`），存成资料库里的 `songs/<id>/cover.jpg`：歌词来自网易云时直接用那首歌的专辑图，否则查 iTunes Store（官方封面，800px），再退回网易云搜索；搜索结果必须曲名匹配才采用，找不到就留占位图，不会拿错歌的封面。之前下载的歌在启动时补一次。封面用在资料库的封面墙、侧栏缩略图，以及歌词页模糊后的背景。
+
+这些接口需要浏览器页面发不了的请求头，所以 App 里的请求经由 Swift 的 URLSession 发出（只放行这几个域名和封面图床，并跟随系统代理）；`pnpm dev` 时由开发服务器代理。CLI 会读取 `https_proxy` 等环境变量走代理。这些都是非官方接口，随时可能变化：某个来源失败时，界面里会在该来源下显示原因，其它来源不受影响。
 
 ## 数据格式
 
@@ -138,7 +149,7 @@ kotone add yoru-ni-kakeru.song.json --audio ~/Music/夜に駆ける.m4a
 core/      共享的 TS：变形引擎、注音对齐、语法大纲、单行解析/校验、跨歌索引、歌词下载（CLI 和 UI 共用同一份）
 cli/       kotone CLI（Node 直接运行 .ts，无构建步骤）
 web/       Solid UI；bridge.ts 在 WKWebView 里走原生桥，在浏览器里退化为 <audio> + localStorage + 开发服务器
-macos/     Swift 外壳（build.sh 用 swiftc 直接出 .app，不需要 Xcode 工程）：窗口与 vibrancy、kotone:// 资源协议、JS 桥、AVPlayer/Now Playing、资料库读写、歌词请求、codex app-server 进程
+macos/     Swift 外壳（build.sh 用 swiftc 直接出 .app，不需要 Xcode 工程）：窗口与 vibrancy、kotone:// 资源协议、JS 桥、Spotify 控制与后台搜索、AVPlayer/Now Playing、资料库读写、歌词请求、codex app-server 进程
 songs/     随 App 打包的示例标注
 docs/      标注规范（也是 `kotone spec` 的正文）
 ```
@@ -167,4 +178,4 @@ typed-japanese 的 annotate 流水线（tsc 类型检查 + 逐字还原原句 + 
 
 ## 版权
 
-仓库只包含《夜に駆ける》（作词作曲 Ayase）中用于讲解的几行歌词。下载的歌词版权归原作者所有，只保存在本机资料库中，供个人学习使用；请不要把资料库里的歌词提交进仓库或公开分发。音频请使用你自己合法获得的文件。
+仓库只包含《夜に駆ける》（作词作曲 Ayase）中用于讲解的几行歌词。下载的歌词和封面版权归原作者所有，只保存在本机资料库中，供个人学习使用；请不要把资料库里的歌词提交进仓库或公开分发。本地音频请使用你自己合法获得的文件。

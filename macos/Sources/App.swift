@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
   let library = Library()
   private(set) lazy var player = Player { [weak self] event in self?.emit(event) }
   private(set) lazy var agent = Agent { [weak self] event in self?.emit(event) }
+  private(set) lazy var spotify = Spotify { [weak self] event in self?.emit(event) }
+  let spotifySearch = SpotifySearch()
   private var bridge: Bridge!
   private let snapshot = SnapshotOptions.parse()
 
@@ -21,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     NSApp.mainMenu = buildMenu()
 
     let config = WKWebViewConfiguration()
-    config.setURLSchemeHandler(AssetHandler(root: webRoot()), forURLScheme: "kotone")
+    config.setURLSchemeHandler(AssetHandler(root: webRoot(), library: library), forURLScheme: "kotone")
     bridge = Bridge(app: self)
     config.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "kotone")
 
@@ -191,28 +193,42 @@ final class DragStrip: NSView {
   }
 }
 
-/// Serves the built web app from disk for kotone://app/… requests.
+/// Serves the built web app from disk for kotone://app/… requests, and song covers from the
+/// library for kotone://app/__cover/<id>.
 final class AssetHandler: NSObject, WKURLSchemeHandler {
   private let root: URL
+  private let library: Library
   private static let types = [
     "html": "text/html", "js": "text/javascript", "css": "text/css", "json": "application/json",
-    "svg": "image/svg+xml", "png": "image/png", "woff2": "font/woff2",
+    "svg": "image/svg+xml", "png": "image/png", "jpg": "image/jpeg", "woff2": "font/woff2",
   ]
 
-  init(root: URL) { self.root = root.standardizedFileURL }
+  init(root: URL, library: Library) {
+    self.root = root.standardizedFileURL
+    self.library = library
+  }
 
   func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
     guard let url = task.request.url else { return }
     let path = url.path.isEmpty || url.path == "/" ? "index.html" : String(url.path.dropFirst())
-    let file = root.appendingPathComponent(path).standardizedFileURL
-    guard file.path.hasPrefix(root.path), let data = try? Data(contentsOf: file) else {
-      task.didReceive(HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: [:])!)
-      task.didFinish()
-      return
+    let file: URL
+    if path.hasPrefix("__cover/") {
+      file = library.coverFile(String(path.dropFirst("__cover/".count))) ?? root.appendingPathComponent("missing")
+    } else {
+      file = root.appendingPathComponent(path).standardizedFileURL
+      guard file.path.hasPrefix(root.path) else { return notFound(task, url) }
+    }
+    guard let data = try? Data(contentsOf: file) else {
+      return notFound(task, url)
     }
     let type = Self.types[file.pathExtension] ?? "application/octet-stream"
     task.didReceive(HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": type])!)
     task.didReceive(data)
+    task.didFinish()
+  }
+
+  private func notFound(_ task: WKURLSchemeTask, _ url: URL) {
+    task.didReceive(HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: [:])!)
     task.didFinish()
   }
 
