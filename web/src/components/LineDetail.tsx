@@ -11,11 +11,15 @@ import { agent } from "../agent.ts";
 import { label, lang, t } from "../i18n.ts";
 import { app } from "../state.ts";
 import { IconArrow } from "./icons.tsx";
-import { CHUNK_COLORS, JaLine, Ruby, ZhLine } from "./Text.tsx";
+import { JaLine, Ruby, ZhLine } from "./Text.tsx";
+import { chunkColor, level, link, sectionLabel } from "../ui.ts";
 
 const ordered = (gs: ResolvedGrammar[]) => gs.filter((g) => !g.auto).concat(gs.filter((g) => g.auto));
 const within = (g: ResolvedGrammar, c: ResolvedChunk) => g.start >= c.start && g.end <= c.end;
 const touches = (g: ResolvedGrammar, c: ResolvedChunk) => g.start < c.end && c.start < g.end;
+
+const lineNote = "m-0 text-[13.5px]/[1.75]";
+const plRole = "font-ui text-[11px]/[normal] font-semibold whitespace-nowrap text-(--cc)";
 
 export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalysis }) {
   const [hot, setHot] = createSignal<number | null>(null);
@@ -54,21 +58,25 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
   });
 
   return (
-    <div class="detail" onClick={(e) => e.stopPropagation()}>
+    <div class="flex min-h-0 flex-auto cursor-auto flex-col gap-3 px-3.5 pt-3 pb-3.5 select-text" onClick={(e) => e.stopPropagation()}>
       <Show when={a().tokens.length} fallback={<Unannotated song={props.song} line={props.line} />}>
-        <section class="structure">
-          <div class="structure-bar">
-            <button class="whole" classList={{ on: sel() === null }} onClick={() => select(null)}>
+        {/* the line is the tab bar: it stays put; only what's below it scrolls */}
+        <section class="flex-none rounded-xl bg-panel px-4.5 pt-2.5 pb-3">
+          <div class="mb-0.5 flex items-center gap-3">
+            <button
+              class={`rounded-full border px-2.5 py-0.5 text-[12px] ${sel() === null ? "border-transparent bg-accent-soft text-accent" : "border-line text-fg-2"}`}
+              onClick={() => select(null)}
+            >
               {t("detail.whole")}
             </button>
             <Show when={a().chunks.length > 1}>
-              <span class="keys" title={t("detail.keysTip")}>
-                <kbd>←</kbd>
-                <kbd>→</kbd>
+              <span class="ml-auto flex gap-[3px]" title={t("detail.keysTip")}>
+                <kbd class={kbd}>←</kbd>
+                <kbd class={kbd}>→</kbd>
               </span>
             </Show>
           </div>
-          <div class="structure-ja">
+          <div class="font-ja text-[22px]/[3] tracking-[0.03em]">
             <JaLine
               ja={props.line.ja}
               analysis={a()}
@@ -82,7 +90,7 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
             />
           </div>
           <Show when={props.line.zh}>
-            <div class="structure-zh">
+            <div class="mt-3.5 font-zh text-[17px]/[1.9]">
               <ZhLine zh={props.line.zh!} analysis={a()} hot={hot()} onHot={setHot} selected={sel()} onChunk={(i) => select(sel() === i ? null : i)} />
             </div>
           </Show>
@@ -96,9 +104,15 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
   );
 }
 
-/** Fades the bottom edge while there's more to scroll to, so a clipped list doesn't look finished. */
+const kbd = "min-w-4.5 rounded-[5px] border border-b-2 border-line px-1 py-px text-center font-ui text-[11px]/[1.3] text-fg-3";
+
+/** Below the line: scrolls on its own, and fades its bottom edge (data-clipped) while there's
+ *  more to scroll to, so a clipped list doesn't look finished. */
+const tabBody =
+  "grid min-h-0 flex-auto animate-tab-in content-start gap-3 overflow-y-auto overscroll-contain px-1 pb-1 data-clipped:[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_40px),transparent)]";
+
 function fadeWhenClipped(el: HTMLElement) {
-  const update = () => el.classList.toggle("clipped", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  const update = () => el.toggleAttribute("data-clipped", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
   const ro = new ResizeObserver(update);
   ro.observe(el);
   // a picked word card grows the content without resizing the box
@@ -123,26 +137,27 @@ function Whole(props: {
   // words no phrase claims (or every word, for a line annotated without chunks)
   const loose = () => a().tokens.filter((tk) => !a().chunks.some((c) => tk.index >= c.tokenStart && tk.index < c.tokenEnd));
   return (
-    <div class="tab-body" ref={fadeWhenClipped}>
+    <div class={tabBody} ref={fadeWhenClipped}>
       <Show when={props.line.note}>
-        <p class="line-note">{props.line.note}</p>
+        <p class={lineNote}>{props.line.note}</p>
       </Show>
       <Show when={a().chunks.length}>
-        <ul class="phrase-list">
+        <ul class="m-0 grid list-none gap-px p-0">
           <For each={a().chunks}>
             {(c) => (
               <li
-                class={`c${c.index % CHUNK_COLORS}`}
-                classList={{ hot: props.hot === c.index }}
+                class={`grid cursor-pointer grid-cols-[8px_auto_auto_auto_minmax(0,1fr)_16px] items-baseline gap-2.5 rounded-lg px-2 py-[3px] text-[12.5px] [&>svg]:self-center [&>svg]:text-fg-3 ${chunkColor(c.index)} ${
+                  props.hot === c.index ? "bg-hover [&>svg]:opacity-100" : "[&>svg]:opacity-0"
+                }`}
                 onMouseEnter={() => props.onHot(c.index)}
                 onMouseLeave={() => props.onHot(null)}
                 onClick={() => props.onSelect(c.index)}
               >
-                <span class="dot" />
-                <span class="pl-role">{c.chunk.role}</span>
-                <span class="pl-ja">{c.chunk.ja}</span>
-                <span class="pl-zh">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
-                <span class="pl-note">{c.chunk.note}</span>
+                <span class="size-2 self-center rounded-full bg-(--cc)" />
+                <span class={plRole}>{c.chunk.role}</span>
+                <span class="font-ja text-[15px]/[normal] whitespace-nowrap">{c.chunk.ja}</span>
+                <span class="font-zh text-[14px]/[normal] whitespace-nowrap text-fg-2">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
+                <span class="leading-[1.6]">{c.chunk.note}</span>
                 <IconArrow />
               </li>
             )}
@@ -154,8 +169,8 @@ function Whole(props: {
       </Show>
       <Show when={across().length}>
         <div>
-          <h4>{t(a().chunks.length ? "detail.lineGrammar" : "detail.points")}</h4>
-          <ul class="grammar-refs">
+          <h4 class={sectionLabel}>{t(a().chunks.length ? "detail.lineGrammar" : "detail.points")}</h4>
+          <ul class={grammarRefs}>
             <For each={across()}>{(g) => <GrammarRow g={g} line={props.line} onFocus={props.onFocus} />}</For>
           </ul>
         </div>
@@ -177,26 +192,29 @@ function Phrase(props: {
   const grammar = createMemo(() => ordered(props.analysis.grammar.filter((g) => touches(g, props.c))));
   const zh = () => props.c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…");
   return (
-    <div class={`tab-body phrase c${props.c.index % CHUNK_COLORS}`} ref={fadeWhenClipped}>
-      <div class="phrase-head">
-        <span class="pl-role">{props.c.chunk.role}</span>
-        <span class="ph-ja">{props.c.chunk.ja}</span>
+    <div class={`${tabBody} ${chunkColor(props.c.index)}`} ref={fadeWhenClipped}>
+      <div class="flex flex-wrap items-baseline gap-3">
+        <span class={`${plRole} self-center rounded-md bg-(--cc-bg) px-2 py-[3px]`}>{props.c.chunk.role}</span>
+        <span class="font-ja text-[21px]/[normal]">{props.c.chunk.ja}</span>
         <Show when={zh()}>
-          <span class="ph-zh">{zh()}</span>
+          <span class="font-zh text-[16px]/[normal] text-fg-2">{zh()}</span>
         </Show>
       </div>
       <Show when={props.c.chunk.note}>
-        <p class="line-note">{props.c.chunk.note}</p>
+        <p class={lineNote}>{props.c.chunk.note}</p>
       </Show>
-      <div class="phrase-cols" classList={{ single: !grammar().length }}>
+      {/* words beside grammar when there's room for both */}
+      <div
+        class={`grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${grammar().length ? "min-[981px]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}
+      >
         <div>
-          <h4>{t("detail.words")}</h4>
+          <h4 class={sectionLabel}>{t("detail.words")}</h4>
           <Words tokens={tokens()} picked={props.picked} onPick={props.onPick} />
         </div>
         <Show when={grammar().length}>
           <div>
-            <h4>{t("detail.points")}</h4>
-            <ul class="grammar-refs">
+            <h4 class={sectionLabel}>{t("detail.points")}</h4>
+            <ul class={grammarRefs}>
               <For each={grammar()}>{(g) => <GrammarRow g={g} line={props.line} onFocus={props.onFocus} />}</For>
             </ul>
           </div>
@@ -206,9 +224,11 @@ function Phrase(props: {
   );
 }
 
+const grammarRefs = "grid list-none gap-px p-0";
+
 function Words(props: { tokens: ResolvedToken[]; picked: number | null; onPick: (i: number | null) => void }) {
   return (
-    <div class="words">
+    <div class="flex flex-wrap gap-2">
       <For each={props.tokens}>
         {(tk) => <WordCard t={tk} picked={props.picked === tk.index} onPick={() => props.onPick(props.picked === tk.index ? null : tk.index)} />}
       </For>
@@ -219,10 +239,10 @@ function Words(props: { tokens: ResolvedToken[]; picked: number | null; onPick: 
 function Unannotated(props: { song: Song; line: Line }) {
   const active = () => agent.isWorking(props.song.id, props.line.id);
   return (
-    <div class="unannotated">
-      <Show when={agent.isQueued(props.song.id, props.line.id)} fallback={<span class="muted">{t("detail.unannotated")}</span>}>
-        <span class="agent-dot" />
-        <span class="muted">
+    <div class="flex flex-wrap items-center gap-2.5">
+      <Show when={agent.isQueued(props.song.id, props.line.id)} fallback={<span class="text-fg-2">{t("detail.unannotated")}</span>}>
+        <span class="size-[7px] flex-none animate-agent-pulse rounded-full bg-accent" />
+        <span class="text-fg-2">
           {active() ? t(agent.state.retries[props.line.id] ? "detail.agentFixing" : "detail.agentWorking") : t("detail.agentQueued")}
         </span>
       </Show>
@@ -235,11 +255,16 @@ function WordCard(props: { t: ResolvedToken; picked: boolean; onPick: () => void
   const d = () => props.t.derivation;
   const fn = () => ["particle", "aux", "copula", "symbol"].includes(tok().pos) && !tok().steps?.length;
   return (
-    <div class="word" classList={{ fn: fn(), picked: props.picked }} onClick={props.onPick}>
-      <div class="w-text">
+    <div
+      class={`max-w-full cursor-pointer rounded-[10px] border px-3 pt-1.5 pb-[9px] transition-[border-color] duration-120 ${
+        props.picked ? "border-accent" : "border-line hover:border-accent"
+      } ${fn() ? "min-w-0 bg-transparent" : "min-w-23 bg-elev"}`}
+      onClick={props.onPick}
+    >
+      <div class="font-ja text-[20px]/[2]">
         <Ruby segs={props.t.ruby} />
       </div>
-      <div class="w-meta">
+      <div class="flex flex-wrap gap-1.5 text-[11px] text-fg-2">
         <Show when={tok().reading}>
           <span>{tok().reading}</span>
         </Show>
@@ -251,30 +276,32 @@ function WordCard(props: { t: ResolvedToken; picked: boolean; onPick: () => void
           }}
         </Show>
         <Show when={tok().jlpt}>
-          <span class={`lv ${tok().jlpt}`}>{tok().jlpt}</span>
+          <span class={level(tok().jlpt)}>{tok().jlpt}</span>
         </Show>
       </div>
       <Show when={tok().gloss}>
-        <div class="w-gloss">{tok().gloss}</div>
+        <div class="mt-0.5 text-[13px]">{tok().gloss}</div>
       </Show>
       <Show when={d()?.ok && d()!.steps.length && tok().lemma}>
-        <div class="w-chain">
-          <span class="base">
+        <div class="mt-1.5 flex flex-wrap items-center gap-1 font-ja text-[14px]/[2]">
+          <span class="text-fg-2">
             <Ruby segs={rubyFor(tok().lemma!.text, tok().lemma!.reading)} />
           </span>
           <For each={d()!.steps}>
             {(s) => (
               <>
-                <span class="arrow">
-                  <span class="step">{STEP_INFO[s.step].label}</span>
+                <span class="inline-flex items-center after:ml-1 after:font-ui after:text-fg-3 after:content-['→']">
+                  <span class="rounded-[5px] bg-accent-soft px-1.5 py-[3px] font-ui text-[10.5px]/none font-semibold text-accent">
+                    {STEP_INFO[s.step].label}
+                  </span>
                 </span>
-                <span class="form">{s.text}</span>
+                <span class="text-fg">{s.text}</span>
               </>
             )}
           </For>
         </div>
         <Show when={props.picked}>
-          <ol class="w-rules">
+          <ol class="mt-1.5 max-w-105 list-decimal pl-4.5 text-[12px]/[1.7] text-fg-2">
             <For each={d()!.steps}>
               {(s) => (
                 <li>
@@ -288,7 +315,7 @@ function WordCard(props: { t: ResolvedToken; picked: boolean; onPick: () => void
         </Show>
       </Show>
       <Show when={props.picked && tok().note}>
-        <div class="w-note">{tok().note}</div>
+        <div class="mt-1.5 text-[12px] text-fg-2">{tok().note}</div>
       </Show>
     </div>
   );
@@ -298,24 +325,23 @@ function GrammarRow(props: { g: ResolvedGrammar; line: Line; onFocus: (r: [numbe
   const p = () => props.g.point;
   return (
     <li
-      class="gref"
-      classList={{ auto: props.g.auto }}
+      class="grid grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2.5 rounded-lg px-2.5 py-[7px] hover:bg-hover"
       onMouseEnter={() => props.onFocus([props.g.start, props.g.end])}
       onMouseLeave={() => props.onFocus(null)}
     >
-      <span class={`lv ${p()?.level ?? ""}`}>{p()?.level ?? "?"}</span>
-      <div class="gref-body">
-        <div class="gref-head">
-          <span class="gref-title">{p()?.title ?? props.g.id}</span>
-          <span class="gref-zh">{p()?.zh}</span>
-          <span class="gref-span">「{props.line.ja.slice(props.g.start, props.g.end)}」</span>
+      <span class={level(p()?.level)}>{p()?.level ?? "?"}</span>
+      <div>
+        <div class="flex flex-wrap items-baseline gap-2">
+          <span class={`font-ja text-[14px]/[normal] ${props.g.auto ? "font-medium" : "font-semibold"}`}>{p()?.title ?? props.g.id}</span>
+          <span class="text-fg-2">{p()?.zh}</span>
+          <span class="font-ja text-[13px]/[normal] text-fg-3">「{props.line.ja.slice(props.g.start, props.g.end)}」</span>
         </div>
         <Show when={props.g.note}>
-          <div class="gref-note">{props.g.note}</div>
+          <div class="mt-0.5 text-[12.5px]/[1.65]">{props.g.note}</div>
         </Show>
       </div>
       <Show when={p()}>
-        <button class="link" title={t("detail.outlineTip")} onClick={() => app.openGrammar(props.g.id)}>
+        <button class={link} title={t("detail.outlineTip")} onClick={() => app.openGrammar(props.g.id)}>
           {t("detail.outline")} <IconArrow />
         </button>
       </Show>

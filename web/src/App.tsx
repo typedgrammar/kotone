@@ -9,6 +9,7 @@ import { Settings } from "./components/Settings.tsx";
 import { lang, t } from "./i18n.ts";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { app } from "./state.ts";
+import { empty } from "./ui.ts";
 import { revealLine } from "./reveal.ts";
 
 function onKey(e: KeyboardEvent) {
@@ -66,15 +67,26 @@ export function App() {
     window.removeEventListener("focus", app.refresh);
   });
   return (
-    <div class="app" classList={{ native: bridge.native, "has-cover": !!backdrop() }}>
-      {/* the current song's cover, blurred, behind the whole window */}
+    // clip, not hidden: a hidden box can still be scrolled by script, shifting the whole window.
+    // data-cover lets the panes over it turn translucent (group-data-cover/app:…)
+    <div
+      class="group/app relative grid h-screen grid-cols-[208px_minmax(0,1fr)] overflow-clip"
+      data-native={bridge.native ? "" : undefined}
+      data-cover={backdrop() ? "" : undefined}
+    >
+      {/* the current song's cover, blurred into a wash of its colours behind the whole window */}
       <Show when={backdrop()} keyed>
         {/* absolute: a url() inside a custom property resolves against the stylesheet, not the page */}
-        {(src) => <div class="backdrop" style={{ "--cover": `url("${new URL(src, location.href).href}")` }} />}
+        {(src) => (
+          <div
+            class="pointer-events-none absolute inset-0 animate-fade-in before:absolute before:-inset-[20%] before:bg-(image:--cover) before:bg-cover before:bg-center before:bg-no-repeat before:opacity-42 before:blur-[80px] before:saturate-140 after:absolute after:inset-0 after:bg-linear-to-b after:from-bg/45 after:to-bg/70 dark:before:opacity-50 dark:after:from-bg/40 dark:after:to-bg/75"
+            style={{ "--cover": `url("${new URL(src, location.href).href}")` }}
+          />
+        )}
       </Show>
       <Sidebar />
-      <main class="main">
-        <div class="content">
+      <main class="relative flex min-h-0 min-w-0 flex-col overflow-clip border-l border-line bg-bg group-data-cover/app:bg-transparent">
+        <div class="relative min-h-0 flex-1 overflow-y-auto">
           <Switch>
             <Match when={app.view() === "library"}>
               <LibraryView />
@@ -82,7 +94,7 @@ export function App() {
             <Match when={app.view() === "lyrics"}>
               <Show
                 when={app.current()?.song}
-                fallback={<p class="muted empty pad">{t("app.empty")}</p>}
+                fallback={<p class={empty}>{t("app.empty")}</p>}
               >
                 {(song) => <LyricsView song={song()} playable={!!app.current()?.audio || app.spotify.installed} />}
               </Show>

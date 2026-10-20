@@ -8,6 +8,7 @@ import type { Song } from "../../../core/types.ts";
 import { agent } from "../agent.ts";
 import { agentErrorText, t } from "../i18n.ts";
 import { app } from "../state.ts";
+import { btn, link } from "../ui.ts";
 
 const windowName = (w: RateWindow) =>
   w.windowDurationMins === 10080 ? t("quota.week") : w.windowDurationMins ? t("quota.hours", { h: Math.round(w.windowDurationMins / 60) }) : "";
@@ -28,22 +29,22 @@ export function AnnotateAction(props: { song: Song }) {
   return (
     <Switch>
       <Match when={mine()}>
-        <div class="annotating">
-          <span class="agent-dot" />
+        <div class="flex items-center gap-2 text-[12px] text-fg-2 tabular-nums">
+          <span class="size-[7px] flex-none animate-agent-pulse rounded-full bg-accent" />
           {t("agent.progress", { n: agent.state.saved.length, total: agent.state.queue.length })}
-          <button class="btn small" onClick={() => agent.stop()}>
+          <button class={btn({ small: true })} onClick={() => agent.stop()}>
             {t("agent.stop")}
           </button>
         </div>
       </Match>
       <Match when={agent.state.status === "starting"}>
-        <button class="btn primary small" disabled>
+        <button class={btn({ primary: true, small: true })} disabled>
           {t("agent.connecting")}
         </button>
       </Match>
       <Match when={pendingOf(props.song).length}>
         <button
-          class="btn primary small"
+          class={btn({ primary: true, small: true })}
           disabled={agent.state.status === "working"}
           title={agent.state.status === "working" ? t("agent.busyOther") : t("agent.annotateTip", { n: pendingOf(props.song).length })}
           onClick={() => agent.annotate(props.song, pendingOf(props.song))}
@@ -55,22 +56,24 @@ export function AnnotateAction(props: { song: Song }) {
   );
 }
 
+const notice = "mt-1.5 flex flex-wrap items-baseline gap-2 text-[12px]";
+
 /** Under the song meta, only when something needs attention. */
 export function AgentNotice() {
   return (
     <Switch>
       <Match when={agent.state.status === "login"}>
-        <div class="agent-notice">
+        <div class={`${notice} text-fg-2`}>
           {t("agent.needLogin")}
-          <button class="link" onClick={() => app.setSettingsOpen(true)}>
+          <button class={link} onClick={() => app.setSettingsOpen(true)}>
             {t("agent.openSettings")}
           </button>
         </div>
       </Match>
       <Match when={agent.state.error}>
-        <div class="agent-notice err">
+        <div class={`${notice} text-c0`}>
           {agentErrorText(agent.state.error!)}
-          <button class="link" onClick={() => app.setSettingsOpen(true)}>
+          <button class={link} onClick={() => app.setSettingsOpen(true)}>
             {t("agent.settings")}
           </button>
         </div>

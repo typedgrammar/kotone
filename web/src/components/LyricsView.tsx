@@ -11,6 +11,7 @@ import { IconPause, IconPlay, IconStar } from "./icons.tsx";
 import { LineDetail } from "./LineDetail.tsx";
 import { JaLine, Ruby } from "./Text.tsx";
 import { revealLine } from "../reveal.ts";
+import { link } from "../ui.ts";
 
 /** `playable`: the play-from-line buttons make sense (local audio, or Spotify to play it in) */
 export function LyricsView(props: { song: Song; playable: boolean }) {
@@ -33,48 +34,57 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
 
   const annotated = () => props.song.lines.filter((l) => l.tokens?.length).length;
 
+  const toggle = (on: boolean) =>
+    `rounded-full border px-3 py-0.75 ${on ? "border-transparent bg-accent-soft text-accent" : "border-line text-fg-2"}`;
+
+  // data-nofuri / data-nozh: the furigana and translation toggles, read by the lines below
   return (
-    <div class="lyrics-view" classList={{ "no-furi": !app.settings.furigana, "no-zh": !app.settings.translation }}>
-      <header class="song-head">
+    <div
+      class="group/lyrics flex h-full flex-col data-nofuri:[&_rt]:hidden"
+      data-nofuri={app.settings.furigana ? undefined : ""}
+      data-nozh={app.settings.translation ? undefined : ""}
+    >
+      {/* the header stays put; only the lines scroll, fading out as they reach it */}
+      <header class="relative z-3 flex flex-none items-end justify-between gap-4 px-10 pt-8.5 pb-1.5">
         <div>
-          <h1>
+          <h1 class="m-0 font-ja text-[28px]/[1.9] font-semibold tracking-[0.04em] [&_rt]:text-[11px] [&_rt]:font-medium">
             <Ruby segs={rubyFor(props.song.title, props.song.titleReading)} />
           </h1>
-          <div class="song-meta">
+          <div class="text-fg-2">
             {props.song.artist}
-            <span class="sep">·</span>
+            <span class={sep}>·</span>
             {t("song.annotated", { n: annotated(), total: props.song.lines.length })}
             <Show when={props.song.excerpt}>
-              <span class="sep">·</span>
+              <span class={sep}>·</span>
               {t("song.excerpt")}
             </Show>
             <Show when={props.song.excerpt || !timed()}>
-              <span class="sep">·</span>
-              <button class="link" onClick={() => app.openSearch({ query: `${props.song.title} ${props.song.artist}`, target: props.song.id })}>
+              <span class={sep}>·</span>
+              <button class={link} onClick={() => app.openSearch({ query: `${props.song.title} ${props.song.artist}`, target: props.song.id })}>
                 {t(props.song.excerpt ? "song.getFull" : "song.getTimed")}
               </button>
             </Show>
           </div>
           <AgentNotice />
         </div>
-        <div class="toggles">
+        <div class="flex items-center gap-1.5">
           <AnnotateAction song={props.song} />
-          <button classList={{ on: app.settings.furigana }} onClick={() => app.setSettings({ furigana: !app.settings.furigana })} title={t("toggle.furiganaTip")}>
+          <button class={toggle(app.settings.furigana)} onClick={() => app.setSettings({ furigana: !app.settings.furigana })} title={t("toggle.furiganaTip")}>
             {t("toggle.furigana")}
           </button>
-          <button classList={{ on: app.settings.translation }} onClick={() => app.setSettings({ translation: !app.settings.translation })} title={t("toggle.translationTip")}>
+          <button class={toggle(app.settings.translation)} onClick={() => app.setSettings({ translation: !app.settings.translation })} title={t("toggle.translationTip")}>
             {t("toggle.translation")}
           </button>
         </div>
       </header>
 
-      <div class="lines-scroll">
-        <div class="lines">
+      <div data-lines-scroll class="min-h-0 flex-1 overflow-y-auto pt-3.5 pb-[35vh] [mask-image:linear-gradient(transparent,#000_28px)]">
+        <div class="px-6">
           <For each={props.song.lines}>
             {(line) => <LyricLine song={props.song} line={line} active={active() === line.id} playable={props.playable} />}
           </For>
           <Show when={props.song.source}>
-            <p class="source">{props.song.source}</p>
+            <p class="mx-4 mt-7 mb-0 text-[12px] text-fg-3">{props.song.source}</p>
           </Show>
         </div>
       </div>
@@ -82,30 +92,47 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
   );
 }
 
+const sep = "mx-1.5 text-fg-3";
+
 function LyricLine(props: { song: Song; line: Line; active: boolean; playable: boolean }) {
   const analysis = createMemo(() => analysisOf(props.song, props.line));
   const open = () => app.expanded() === props.line.id;
   const fav = () => app.isFav(props.song.id, props.line.id);
   // on the opened line (and the one playing), the gutter button pauses while the song plays
   const pausable = () => (open() || props.active) && app.playing() && app.playingId() === props.song.id;
+  const queued = () => agent.isQueued(props.song.id, props.line.id);
+  const working = () => agent.isWorking(props.song.id, props.line.id);
+  // a queued line shows a dot in the gutter (pulsing while Codex works on it); hovering the row
+  // hides it for the play button
+  const gutter = () =>
+    queued()
+      ? `grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1 after:col-start-1 after:row-start-1 after:rounded-full group-hover/row:after:hidden ${
+          working() ? "after:size-[7px] after:animate-agent-pulse after:bg-accent" : "after:size-[5px] after:bg-fg-3"
+        }`
+      : "";
+  const playFrom = () =>
+    [
+      "inline-grid size-5.5 place-items-center rounded-md hover:bg-hover hover:opacity-100",
+      pausable() ? "text-accent" : "text-fg-2 hover:text-fg",
+      open() && pausable() ? "opacity-100" : open() ? "opacity-75" : "opacity-0 group-hover/row:opacity-75",
+    ].join(" ");
+  const ja = () =>
+    `font-ja text-[21px]/[2.2] tracking-[0.03em] transition-colors duration-200 group-data-nofuri/lyrics:leading-[1.8] ${
+      props.active ? "text-accent" : props.line.tokens?.length ? "" : "text-fg-2"
+    }`;
   return (
-    <div
-      id={`line-${props.line.id}`}
-      class="line"
-      classList={{
-        active: props.active,
-        open: open(),
-        bare: !props.line.tokens?.length,
-        queued: agent.isQueued(props.song.id, props.line.id),
-        working: agent.isWorking(props.song.id, props.line.id),
-      }}
-    >
-      <div class="line-row" onClick={() => app.setExpanded(open() ? null : props.line.id)}>
-        <div class="gutter">
+    <div id={`line-${props.line.id}`} class="relative my-0.5 scroll-mt-7 rounded-[14px]">
+      <div
+        data-line-row
+        class={`group/row grid grid-cols-[22px_minmax(0,1.3fr)_minmax(0,1fr)_28px] items-center gap-4.5 rounded-[14px] py-1.5 pr-2.5 pl-1 group-data-nozh/lyrics:grid-cols-[22px_minmax(0,1fr)_28px] ${
+          open() ? "bg-sel" : "hover:bg-hover"
+        }`}
+        onClick={() => app.setExpanded(open() ? null : props.line.id)}
+      >
+        <div class={gutter()}>
           <Show when={pausable() || (props.line.time !== undefined && props.playable)}>
             <button
-              class="icon play-from"
-              classList={{ pause: pausable() }}
+              class={playFrom()}
               title={t(pausable() ? "line.pause" : "line.playFrom")}
               onClick={(e) => (e.stopPropagation(), pausable() ? app.togglePlay() : app.seek(props.line.time!, true))}
             >
@@ -115,13 +142,18 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
             </button>
           </Show>
         </div>
-        <div class="ja">
+        <div class={ja()}>
           <JaLine ja={props.line.ja} analysis={analysis()} />
         </div>
-        <div class="zh">{props.line.zh}</div>
+        <div
+          class={`font-zh text-[15px]/[1.6] transition-colors duration-200 group-data-nozh/lyrics:hidden ${props.active ? "text-fg" : "text-fg-2"}`}
+        >
+          {props.line.zh}
+        </div>
         <button
-          class="icon star"
-          classList={{ on: fav() }}
+          class={`inline-grid size-6.5 place-items-center rounded-md transition-opacity duration-120 hover:bg-hover ${
+            fav() ? "text-star" : "text-fg-2 opacity-0 group-hover/row:opacity-100 hover:text-fg"
+          }`}
           title={t(fav() ? "line.unfav" : "line.fav")}
           onClick={(e) => (e.stopPropagation(), app.toggleFav(props.song, props.line))}
         >
@@ -145,7 +177,7 @@ function Popover(props: { song: Song; line: Line; analysis: LineAnalysis }) {
   const [above, setAbove] = createSignal(false);
 
   onMount(() => {
-    const scroller = el.closest(".lines-scroll")!;
+    const scroller = el.closest("[data-lines-scroll]")!;
     const row = el.previousElementSibling!.getBoundingClientRect();
     const view = scroller.getBoundingClientRect();
     // the top edge fades out; don't count it as room
@@ -171,14 +203,21 @@ function Popover(props: { song: Song; line: Line; analysis: LineAnalysis }) {
     // a click anywhere else closes it (the player stays usable while reading)
     const outside = (e: PointerEvent) => {
       const t = e.target as Element;
-      if (!t.closest?.(`#line-${props.line.id}, .player, .modal-backdrop`)) app.setExpanded(null);
+      if (!t.closest?.(`#line-${props.line.id}, [data-player], [data-modal]`)) app.setExpanded(null);
     };
     document.addEventListener("pointerdown", outside, true);
     onCleanup(() => document.removeEventListener("pointerdown", outside, true));
   });
 
   return (
-    <div ref={el} class="popover" classList={{ above: above() }}>
+    // z-2: under the song header
+    <div
+      ref={el}
+      data-popover
+      class={`absolute inset-x-0 z-2 flex flex-col overflow-hidden rounded-[14px] border border-line bg-elev shadow-[0_18px_50px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_18px_50px_rgba(0,0,0,0.5),0_2px_8px_rgba(0,0,0,0.3)] ${
+        above() ? "bottom-[calc(100%+8px)] animate-pop-in-above" : "top-[calc(100%+8px)] animate-pop-in"
+      }`}
+    >
       <LineDetail song={props.song} line={props.line} analysis={props.analysis} />
     </div>
   );

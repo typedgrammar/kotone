@@ -23,13 +23,23 @@ import type { Song } from "../../../core/types.ts";
 import { bridge } from "../bridge.ts";
 import { label, lyricsErrorText, t } from "../i18n.ts";
 import { app, type SearchSeed } from "../state.ts";
-import { Segmented } from "./Outline.tsx";
+import { btn, err, muted, searchField, view, viewHead, viewTitle, viewTools } from "../ui.ts";
+import { Segmented } from "./controls.tsx";
 
 interface SourceResult {
   busy: boolean;
   hits: SongHit[];
   error?: string;
 }
+
+// the outline-style split: source groups on the left, the chosen result on the right
+const detail = "overflow-y-auto px-9 pt-6 pb-12 select-text";
+const summary = `my-3.5 max-w-160 text-[14px]/[1.8] ${muted}`;
+const fact = "rounded-full bg-panel px-2 py-px text-[12px]";
+const action = "flex items-baseline gap-3 text-[12.5px]";
+// a paragraph keeps the browser's 1em margins it had before the reset
+const para = "my-3.25";
+const hitNote = "m-0 px-2 pt-0.5 pb-1 text-[11.5px] text-fg-3";
 
 const fmt = (t?: number) => (t === undefined ? "" : `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`);
 
@@ -123,11 +133,11 @@ export function LyricsSearch() {
   const searched = () => Object.keys(search.results()).length > 0;
 
   return (
-    <div class="outline-view">
-      <header class="view-head">
-        <h2>{t("search.title")}</h2>
+    <div class={view}>
+      <header class={viewHead}>
+        <h2 class={viewTitle}>{t("search.title")}</h2>
         <form
-          class="view-tools"
+          class={viewTools}
           onSubmit={(e) => {
             e.preventDefault();
             search.clearTarget();
@@ -136,7 +146,7 @@ export function LyricsSearch() {
         >
           <input
             ref={input}
-            class="search wide"
+            class={searchField.replace("w-30", "w-55")}
             placeholder={t("search.placeholder")}
             value={search.query()}
             onInput={(e) => search.setQuery(e.currentTarget.value)}
@@ -148,33 +158,41 @@ export function LyricsSearch() {
           />
         </form>
       </header>
-      <div class="split hits-split">
-        <nav class="outline">
-          <Show when={searched()} fallback={<p class="muted hint">{t("search.hint")}</p>}>
+      <div class="grid min-h-0 flex-1 grid-cols-[290px_minmax(0,1fr)]">
+        <nav class="min-w-0 overflow-y-auto border-r border-line px-2 pt-1 pb-6">
+          <Show when={searched()} fallback={<p class={`${para} px-2 py-3.5 ${muted}`}>{t("search.hint")}</p>}>
             <For each={groups()}>
               {(s) => {
                 const r = () => search.results()[s.id];
                 return (
                   <>
-                    <div class="cat">
+                    <div class="px-2 pt-3.5 pb-1 font-ui text-[11px]/[normal] font-semibold tracking-[0.06em] text-fg-3">
                       {label.source(s.id, s.zh)}
                       <Show when={r()?.busy}>
-                        <span class="cat-state">{t("search.searching")}</span>
+                        <span class="ml-1.5 font-normal tracking-normal">{t("search.searching")}</span>
                       </Show>
                     </div>
                     <Show when={r()?.error}>
-                      <p class="hit-error">{r()!.error}</p>
+                      <p class={hitNote}>{r()!.error}</p>
                     </Show>
                     <Show when={r() && !r()!.busy && !r()!.error && !r()!.hits.length}>
-                      <p class="hit-error">{t("search.noResults")}</p>
+                      <p class={hitNote}>{t("search.noResults")}</p>
                     </Show>
                     <For each={r()?.hits ?? []}>
-                      {(h) => (
-                        <button class="point hit" classList={{ sel: search.selected() === refOf(h) }} onClick={() => search.setSelected(refOf(h))}>
-                          <span class="h-title">{h.title}</span>
-                          <span class="h-sub">{[h.artist, h.album, fmt(h.duration)].filter(Boolean).join(" · ")}</span>
-                        </button>
-                      )}
+                      {(h) => {
+                        const sel = () => search.selected() === refOf(h);
+                        return (
+                          <button
+                            class={`flex w-full min-w-0 flex-col items-baseline gap-px rounded-md px-2 py-1.5 text-left ${sel() ? "bg-accent text-white" : "hover:bg-hover"}`}
+                            onClick={() => search.setSelected(refOf(h))}
+                          >
+                            <span class="block max-w-full truncate font-ja text-[14px]/[1.4]">{h.title}</span>
+                            <span class={`block max-w-full truncate text-[11.5px] ${sel() ? "text-white/80" : "text-fg-3"}`}>
+                              {[h.artist, h.album, fmt(h.duration)].filter(Boolean).join(" · ")}
+                            </span>
+                          </button>
+                        );
+                      }}
                     </For>
                   </>
                 );
@@ -192,11 +210,11 @@ export function LyricsSearch() {
 
 function Intro() {
   return (
-    <article class="point-detail">
-      <p class="summary muted">
+    <article class={detail}>
+      <p class={summary}>
         {t("search.intro1")} {t("search.intro2")}
       </p>
-      <p class="summary muted">{t("search.localOnly")}</p>
+      <p class={summary}>{t("search.localOnly")}</p>
     </article>
   );
 }
@@ -260,24 +278,24 @@ function Preview(props: { hitRef: string }) {
   }
 
   return (
-    <article class="point-detail lyric-preview">
-      <div class="pd-head">
-        <h3>{title()}</h3>
-        <span class="pd-zh">{artist()}</span>
+    <article class={detail}>
+      <div class="flex items-baseline gap-2.5">
+        <h3 class="m-0 font-ja text-[26px]/[1.8] font-semibold">{title()}</h3>
+        <span class="text-[14px] text-fg-2">{artist()}</span>
       </div>
-      <div class="facts">
-        <span class="fact">{label.source(props.hitRef.split(":")[0] as SourceId, sourceName(props.hitRef.split(":")[0] as SourceId))}</span>
+      <div class="mt-0.5 mb-4.5 flex flex-wrap gap-1.5">
+        <span class={`${fact} text-fg-2`}>{label.source(props.hitRef.split(":")[0] as SourceId, sourceName(props.hitRef.split(":")[0] as SourceId))}</span>
         <Show when={hit()?.album}>
-          <span class="fact">{hit()!.album}</span>
+          <span class={`${fact} text-fg-2`}>{hit()!.album}</span>
         </Show>
         <Show when={hit()?.duration}>
-          <span class="fact">{fmt(hit()!.duration)}</span>
+          <span class={`${fact} text-fg-2`}>{fmt(hit()!.duration)}</span>
         </Show>
         <Show when={lyrics()}>
           {(f) => (
             <>
-              <span class="fact">{t("search.lines", { n: f().lines.length })}</span>
-              <span class="fact" classList={{ warn: !f().synced }}>
+              <span class={`${fact} text-fg-2`}>{t("search.lines", { n: f().lines.length })}</span>
+              <span class={`${fact} ${f().synced ? "text-fg-2" : "text-n3"}`}>
                 {t(f().synced ? "search.synced" : "search.unsynced")}
               </span>
             </>
@@ -286,43 +304,43 @@ function Preview(props: { hitRef: string }) {
       </div>
 
       <Show when={search.preview.loading}>
-        <p class="muted">{t("search.downloading")}</p>
+        <p class={`${para} ${muted}`}>{t("search.downloading")}</p>
       </Show>
       <Show when={search.preview.error}>
-        <p class="err">{lyricsErrorText(search.preview.error)}</p>
+        <p class={`${para} ${err}`}>{lyricsErrorText(search.preview.error)}</p>
       </Show>
 
       <Show when={plan()}>
         {(p) => (
-          <div class="actions">
+          <div class="mb-5.5 grid gap-2">
             <Show when={into()}>
               {(s) => (
-                <div class="action">
-                  <button class="btn primary" disabled={busy()} onClick={() => save("merge")}>
+                <div class={action}>
+                  <button class={btn({ primary: true })} disabled={busy()} onClick={() => save("merge")}>
                     {t("search.complete", { title: s().title })}
                   </button>
-                  <span class="muted">
+                  <span class={muted}>
                     {t("search.completeDesc", { n: p().lines.length })}
                     {lyrics()?.synced ? t("search.completeTimed") : ""}
                     {p().reused ? t("search.keep", { n: p().reused }) : ""}
                     <Show when={p().lost}>
-                      <span class="warn">{t("search.lost", { n: p().lost })}</span>
+                      <span class="text-n3">{t("search.lost", { n: p().lost })}</span>
                     </Show>
                   </span>
                 </div>
               )}
             </Show>
-            <div class="action">
-              <button class="btn" classList={{ primary: !into() }} disabled={busy()} onClick={() => save("new")}>
+            <div class={action}>
+              <button class={btn({ primary: !into() })} disabled={busy()} onClick={() => save("new")}>
                 {t("search.new")}
               </button>
-              <span class="muted">
+              <span class={muted}>
                 {t("search.newDesc")}
                 {p().reused ? t("search.reusable", { n: p().reused }) : ""}
               </span>
             </div>
             <Show when={error()}>
-              <p class="err">{error()}</p>
+              <p class={`${para} ${err}`}>{error()}</p>
             </Show>
           </div>
         )}
@@ -331,25 +349,25 @@ function Preview(props: { hitRef: string }) {
       <Show when={lyrics()}>
         {(f) => (
           <>
-            <ol class="preview-lines">
+            <ol class="border-t border-line">
               <For each={plan()?.lines ?? []}>
                 {(l) => (
-                  <li classList={{ annotated: isAnnotated(l) }}>
-                    <span class="pl-time">{fmt(l.time)}</span>
+                  <li class="grid grid-cols-[44px_minmax(0,1fr)_auto] items-baseline gap-2.5 border-b border-line py-1.75">
+                    <span class="text-[11px] text-fg-3 tabular-nums">{fmt(l.time)}</span>
                     <div>
-                      <div class="pl-ja ja-font">{l.ja}</div>
+                      <div class="font-ja text-[16px]/[1.6]">{l.ja}</div>
                       <Show when={l.zh}>
-                        <div class="pl-zh">{l.zh}</div>
+                        <div class="font-zh text-[13px]/[1.5] text-fg-2">{l.zh}</div>
                       </Show>
                     </div>
                     <Show when={isAnnotated(l)}>
-                      <span class="pl-badge">{t("search.annotated")}</span>
+                      <span class="text-[11px] text-accent">{t("search.annotated")}</span>
                     </Show>
                   </li>
                 )}
               </For>
             </ol>
-            <p class="source">{sourceNote(f())}</p>
+            <p class="mx-4 mt-7 mb-0 text-[12px] text-fg-3">{sourceNote(f())}</p>
           </>
         )}
       </Show>

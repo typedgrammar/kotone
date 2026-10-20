@@ -5,7 +5,7 @@ const EDGE = 28; // the list's faded top edge
 
 export function revealLine(id: string, where: "center" | "start" | "nearest", smooth = false) {
   const el = document.getElementById(`line-${id}`);
-  const list = el?.closest<HTMLElement>(".lines-scroll");
+  const list = el?.closest<HTMLElement>("[data-lines-scroll]");
   if (!el || !list) return;
   const r = el.getBoundingClientRect();
   const v = list.getBoundingClientRect();

@@ -148,7 +148,9 @@ kotone add yoru-ni-kakeru.song.json --audio ~/Music/夜に駆ける.m4a
 ```
 core/      共享的 TS：变形引擎、注音对齐、语法大纲、单行解析/校验、跨歌索引、歌词下载（CLI 和 UI 共用同一份）
 cli/       kotone CLI（Node 直接运行 .ts，无构建步骤）
-web/       Solid UI；bridge.ts 在 WKWebView 里走原生桥，在浏览器里退化为 <audio> + localStorage + 开发服务器
+web/       Solid UI，样式全部是 Tailwind v4 工具类：设计 token（颜色、字体、动画）在 styles.css 的 @theme 里，
+           深浅色跟随系统；多处共用的写法是 ui.ts 里的类名字符串（方便以后的原生版本直接复用）；
+           bridge.ts 在 WKWebView 里走原生桥，在浏览器里退化为 <audio> + localStorage + 开发服务器
 macos/     Swift 外壳（build.sh 用 swiftc 直接出 .app，不需要 Xcode 工程）：窗口与 vibrancy、kotone:// 资源协议、JS 桥、Spotify 控制与后台搜索、AVPlayer/Now Playing、资料库读写、歌词请求、codex app-server 进程
 songs/     随 App 打包的示例标注
 docs/      标注规范（也是 `kotone spec` 的正文）

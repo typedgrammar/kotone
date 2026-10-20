@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import solid from "vite-plugin-solid";
+import tailwindcss from "@tailwindcss/vite";
 import { libraryHome } from "../cli/home.ts";
 import { allowedHost, fetchHttp, type HttpRequest } from "../core/lyrics/index.ts";
 
@@ -145,7 +146,7 @@ function devLibrary(): Plugin {
 export default defineConfig({
   root: path.dirname(new URL(import.meta.url).pathname),
   base: "./",
-  plugins: [solid(), devLibrary()],
+  plugins: [solid(), tailwindcss(), devLibrary()],
   server: { fs: { allow: [".."] } },
   build: { outDir: "dist", emptyOutDir: true, target: "safari16" },
 });
