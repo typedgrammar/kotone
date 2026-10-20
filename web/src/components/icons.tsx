@@ -23,6 +23,7 @@ export const IconStar = (p: { filled?: boolean } = {}) => (
 );
 export const IconFolder = () => <Svg d="M2 4.5c0-.6.4-1 1-1h3.2l1.3 1.5H13c.6 0 1 .4 1 1V12c0 .6-.4 1-1 1H3c-.6 0-1-.4-1-1Z" />;
 export const IconPlus = () => <Svg d="M8 3v10M3 8h10" />;
+export const IconImport = () => <Svg d="M8 2.5v7.5M5 7l3 3 3-3M2.5 10.5v2c0 .6.4 1 1 1h9c.6 0 1-.4 1-1v-2" />;
 export const IconMusic = () => <Svg d="M6 12.5V3.5l7-1.5v9M6 12.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM13 11a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />;
 export const IconLink = () => <Svg d="M6.5 9.5l3-3M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1" />;
 export const IconGear = () => (

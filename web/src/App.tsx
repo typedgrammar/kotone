@@ -1,7 +1,7 @@
 import { createEffect, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import { bridge } from "./bridge.ts";
+import { AddSong } from "./components/AddSong.tsx";
 import { LibraryView } from "./components/Library.tsx";
-import { LyricsSearch } from "./components/LyricsSearch.tsx";
 import { LyricsView } from "./components/LyricsView.tsx";
 import { FavoritesView, GrammarView, VocabView } from "./components/Outline.tsx";
 import { PlayerBar } from "./components/PlayerBar.tsx";
@@ -109,7 +109,7 @@ export function App() {
               <VocabView />
             </Match>
             <Match when={app.view() === "search"}>
-              <LyricsSearch />
+              <AddSong />
             </Match>
           </Switch>
         </div>

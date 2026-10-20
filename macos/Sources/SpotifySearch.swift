@@ -11,7 +11,7 @@ final class SpotifySearch: NSObject, WKScriptMessageHandler {
   private var waiting: [(query: String, done: Done)] = []
   private var current: (done: Done, timeout: DispatchWorkItem)?
 
-  // wraps fetch: the first search response that lists tracks goes back as [{ uri, name, artists, duration, cover }]
+  // wraps fetch: the first search response that lists tracks goes back as [{ uri, name, artists, album, duration, cover }]
   private static let hook = """
     (() => {
       const send = (list) => window.webkit.messageHandlers.spotifyTracks.postMessage(JSON.stringify(list));
@@ -32,6 +32,7 @@ final class SpotifySearch: NSObject, WKScriptMessageHandler {
             uri: t.uri,
             name: t.name,
             artists: ((t.artists && t.artists.items) || []).map((a) => a.profile && a.profile.name).filter(Boolean),
+            album: t.albumOfTrack && t.albumOfTrack.name,
             duration: t.duration ? t.duration.totalMilliseconds / 1000 : undefined,
             cover: (((t.albumOfTrack && t.albumOfTrack.coverArt && t.albumOfTrack.coverArt.sources) || []).slice().sort((a, b) => b.width - a.width)[0] || {}).url,
           })));

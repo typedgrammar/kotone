@@ -3,7 +3,7 @@ import { bridge } from "../bridge.ts";
 import { t, type Key } from "../i18n.ts";
 import { app, type View } from "../state.ts";
 import { iconButton } from "../ui.ts";
-import { IconBook, IconCards, IconFolder, IconGear, IconGrid, IconLyrics, IconMusic, IconPlus, IconSearch, IconStar } from "./icons.tsx";
+import { IconBook, IconCards, IconFolder, IconGear, IconGrid, IconImport, IconLyrics, IconMusic, IconPlus, IconStar } from "./icons.tsx";
 
 const NAV: [View, () => JSX.Element, Key][] = [
   ["library", IconGrid, "nav.library"],
@@ -11,7 +11,7 @@ const NAV: [View, () => JSX.Element, Key][] = [
   ["favorites", IconStar, "nav.favorites"],
   ["grammar", IconBook, "nav.grammar"],
   ["vocab", IconCards, "nav.vocab"],
-  ["search", IconSearch, "nav.search"],
+  ["search", IconPlus, "nav.search"],
 ];
 
 export function Sidebar() {
@@ -23,7 +23,8 @@ export function Sidebar() {
             <button
               data-nav={v}
               class={`flex w-full items-center gap-2.5 rounded-[7px] px-2 py-1.25 ${app.view() === v ? "bg-sel" : "hover:bg-hover"}`}
-              onClick={() => app.setView(v)}
+              title={v === "search" ? t("side.add") : undefined}
+              onClick={() => (v === "search" ? app.addSong() : app.setView(v))}
             >
               <span class={`grid w-4.5 place-items-center ${app.view() === v ? "text-accent" : "text-fg-2"}`}>
                 <Icon />
@@ -66,7 +67,7 @@ export function Sidebar() {
       <div class="flex gap-0.5 pt-1.5">
         <Show when={bridge.native}>
           <button class={iconButton} title={t("side.import")} onClick={async () => (await bridge.importSong()) && app.refresh()}>
-            <IconPlus />
+            <IconImport />
           </button>
           <button class={iconButton} title={t("side.reveal")} onClick={() => bridge.revealLibrary()}>
             <IconFolder />

@@ -157,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
       .separator(),
       item(L("退出 Kotone", "Quit Kotone"), #selector(NSApplication.terminate(_:)), "q"),
     ])
+    submenu(L("文件", "File"), [item(L("添加歌曲…", "Add Song…"), #selector(addSong), "n")])
     submenu(L("编辑", "Edit"), [
       item(L("撤销", "Undo"), Selector(("undo:")), "z"),
       item(L("重做", "Redo"), Selector(("redo:")), "z", [.command, .shift]),
@@ -177,6 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
   @objc private func reload() { webView.reload() }
   @objc private func openSettings() { emit(["type": "openSettings"]) }
+  @objc private func addSong() { emit(["type": "addSong"]) }
 
   func setLanguage(_ lang: String) {
     guard lang != uiLanguage, lang == "zh" || lang == "en" else { return }

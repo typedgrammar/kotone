@@ -5,7 +5,7 @@
 - 歌词默认带**假名注音**，和**中文翻译并排**显示，播放时当前句随时间轴高亮
 - 点开任意一句，按需查看拆解：**句子成分 ↔ 中文片段**同色对应、每个词从辞书形一步步**怎么变形**来的（规则可展开）、本句用到的**语法点**和针对本句的讲解
 - 句子可以**收藏**；“语法大纲”从知识点反查收藏（或全部）歌词里的例句，“词汇”按 JLPT 级别把词和用例组织起来
-- **找歌词**：参考 [LDDC](https://github.com/chenmozhijin/LDDC)，从网易云音乐、QQ音乐、酷狗、LRCLIB 下载带时间轴的日语原文（**不取平台译文**，中文翻译只由 agent 写）；可以新建一首歌，也可以给已有的歌补全歌词和时间轴，已经标注过的句子原样保留
+- **添加歌曲**（侧栏、资料库或 ⌘N）：搜索 Spotify 曲库，每首结果自动配上歌词（参考 [LDDC](https://github.com/chenmozhijin/LDDC)，从网易云音乐、QQ音乐、酷狗、LRCLIB 下载，优先带时间轴的日语原文，**不取平台译文**，中文翻译只由 agent 写），歌词、封面和 Spotify 曲目一起加入资料库，之后由 Spotify 在后台播放；也可以给已有的歌补全歌词和时间轴，已经标注过的句子原样保留
 - **在 App 里直接让 Codex 标注**：点歌名右侧的“标注整首歌”，走你自己的 ChatGPT 账号额度；每一句通过校验就立刻出现在歌词里，不用离开播放器
 - 校验是确定性的：App 和 `kotone` CLI 共用同一个检查器，会重新推导 agent 写下的每个读音、变形和中文对应，不一致就把报错交还给 agent 修正
 
@@ -74,7 +74,7 @@ kotone prompt yoru-ni-kakeru.song.json      # 生成交给 agent 的任务说明
 kotone add yoru-ni-kakeru.song.json --audio ~/Music/夜に駆ける.m4a
 ```
 
-`init` 也接受自己的 LRC / 纯文本文件；LDDC 导出的双语 LRC 里与原文同一时间戳的译文行、罗马音行会被丢弃。切回 App 窗口就会出现在资料库里。在 App 里“找歌词”下载的歌已经在资料库中，直接 `kotone prompt <歌曲 id>` 即可（`status` / `check` / `times` 同样接受资料库 id）。
+`init` 也接受自己的 LRC / 纯文本文件；LDDC 导出的双语 LRC 里与原文同一时间戳的译文行、罗马音行会被丢弃。切回 App 窗口就会出现在资料库里。在 App 里“添加歌曲”加入的歌已经在资料库中，直接 `kotone prompt <歌曲 id>` 即可（`status` / `check` / `times` 同样接受资料库 id）。
 
 仓库里带了一个 Claude Code skill（[`.claude/skills/annotate-lyrics`](.claude/skills/annotate-lyrics/SKILL.md)），在这个目录里对 Claude 说“帮我把《夜に駆ける》标注完”即可。
 

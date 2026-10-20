@@ -20,8 +20,8 @@ export const sourceName = (id: SourceId): string => SOURCES.find((s) => s.id ===
 
 /** Hosts the providers talk to; the native bridge and the dev proxy refuse anything else. */
 export const LYRIC_HOSTS = ["music.163.com", "u.y.qq.com", "c.y.qq.com", "mobiles.kugou.com", "lyrics.kugou.com", "lrclib.net"];
-/** Cover art: the iTunes search API, its artwork CDN and NetEase's image hosts (p1…p4). */
-export const COVER_HOSTS = ["itunes.apple.com", ".mzstatic.com", ".music.126.net"];
+/** Cover art: the iTunes search API, its artwork CDN, NetEase's image hosts (p1…p4) and Spotify's. */
+export const COVER_HOSTS = ["itunes.apple.com", ".mzstatic.com", ".music.126.net", "i.scdn.co"];
 
 /** Hosts the native / dev fetchers may reach; a leading dot allows any subdomain. Keep in sync with Net.swift. */
 export const allowedHost = (host: string): boolean =>

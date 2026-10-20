@@ -66,6 +66,8 @@ test("cover hosts are allowed by suffix, others are not", () => {
   assert.ok(allowedHost("is3-ssl.mzstatic.com"));
   assert.ok(allowedHost("p4.music.126.net"));
   assert.ok(allowedHost("lrclib.net"));
+  assert.ok(allowedHost("i.scdn.co"));
+  assert.ok(!allowedHost("x.i.scdn.co"));
   assert.ok(!allowedHost("evil-mzstatic.com"));
   assert.ok(!allowedHost("example.com"));
 });

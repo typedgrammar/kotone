@@ -1,6 +1,7 @@
 import { batch, createEffect, createMemo, createRoot, createSignal, on } from "solid-js";
 import { createStore, produce } from "solid-js/store";
-import { findCover } from "../../core/lyrics/cover.ts";
+import { coverAt } from "../../core/catalog.ts";
+import { downloadCover, findCover } from "../../core/lyrics/cover.ts";
 import { pickTrack, songForTrack } from "../../core/spotify.ts";
 import type { Favorites, Line, Song } from "../../core/types.ts";
 import { bridge, songJson, type SongRecord, type SpotifyState } from "./bridge.ts";
@@ -8,7 +9,7 @@ import { revealLine } from "./reveal.ts";
 
 export type View = "library" | "lyrics" | "favorites" | "grammar" | "vocab" | "search";
 
-/** Opens the lyric search with a query, and the song the download should complete */
+/** Opens the song search with a query, and the library song the download should complete */
 export interface SearchSeed {
   query: string;
   target?: string;
@@ -41,8 +42,11 @@ export const app = createRoot(() => {
   const [expanded, setExpanded] = createSignal<string | null>(null);
   const [grammarFocus, setGrammarFocus] = createSignal<string | null>(null);
   const [searchSeed, setSearchSeed] = createSignal<SearchSeed | null>(null);
+  // bumped by every "add a song" entry, so the search box takes focus even when already showing
+  const [searchFocus, setSearchFocus] = createSignal(0);
   const [settingsOpen, setSettingsOpen] = createSignal(false);
   bridge.onOpenSettings(() => setSettingsOpen(true));
+  bridge.onAddSong(() => actions.addSong());
   const [settings, setSettings] = persisted("kotone.settings", {
     furigana: true,
     translation: true,
@@ -249,9 +253,24 @@ export const app = createRoot(() => {
         setView("search");
       });
     },
-    /** Write a song made from downloaded lyrics and show it; its cover follows in the background */
-    async saveSong(song: Song, overwrite: boolean, ref?: string) {
+    /** The song search, ready to type into */
+    addSong() {
+      batch(() => {
+        setSettingsOpen(false);
+        setView("search");
+        setSearchFocus((n) => n + 1);
+      });
+    },
+    /**
+     * Write a song made from downloaded lyrics and show it. The Spotify track and album art the
+     * search found go with it; without art, a cover is looked for in the background.
+     */
+    async saveSong(song: Song, overwrite: boolean, ref?: string, found: { spotify?: string; cover?: string } = {}) {
       await bridge.saveSong(song, overwrite);
+      if (found.spotify) await bridge.linkSpotify(song.id, found.spotify);
+      const had = records().find((r) => r.song?.id === song.id)?.cover;
+      const art = found.cover && !had ? await downloadCover(bridge.http, coverAt(found.cover, 800), "search") : null;
+      if (art) await bridge.saveCover(song.id, art).catch(() => {});
       await actions.refresh();
       batch(() => {
         actions.openSong(song.id);
@@ -353,6 +372,7 @@ export const app = createRoot(() => {
     grammarFocus,
     setGrammarFocus,
     searchSeed,
+    searchFocus,
     settingsOpen,
     setSettingsOpen,
     settings,

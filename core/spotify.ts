@@ -44,6 +44,7 @@ export interface SpotifyTrack {
   artists: string[];
   /** Seconds */
   duration?: number;
+  album?: string;
   cover?: string;
 }
 

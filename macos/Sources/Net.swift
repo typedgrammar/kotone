@@ -7,7 +7,7 @@ enum Net {
   /// Keep in sync with LYRIC_HOSTS / COVER_HOSTS in core/lyrics/index.ts; a leading dot allows subdomains.
   static let hosts = [
     "music.163.com", "u.y.qq.com", "c.y.qq.com", "mobiles.kugou.com", "lyrics.kugou.com", "lrclib.net",
-    "itunes.apple.com", ".mzstatic.com", ".music.126.net",
+    "itunes.apple.com", ".mzstatic.com", ".music.126.net", "i.scdn.co",
   ]
   static func allowed(_ host: String) -> Bool { hosts.contains { $0.hasPrefix(".") ? host.hasSuffix($0) : host == $0 } }
 

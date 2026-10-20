@@ -100,6 +100,8 @@ export interface Bridge {
   openURL(url: string): void;
   /** The app menu's Settings… (⌘,) */
   onOpenSettings(cb: () => void): void;
+  /** The File menu's Add Song… (⌘N) */
+  onAddSong(cb: () => void): void;
   /** Native menus and messages follow the UI language */
   setLanguage(lang: "zh" | "en"): void;
   load(src: string, meta: { title: string; artist: string }): Promise<void>;
@@ -143,7 +145,7 @@ function mergeRecords(library: SongRecord[]): SongRecord[] {
 
 type Listener = (e: PlayerEvent) => void;
 type AgentEvent = { type: "agent"; line: string } | { type: "agentExit"; code: number; stderr: string };
-type UiEvent = { type: "openSettings" };
+type UiEvent = { type: "openSettings" } | { type: "addSong" };
 type SpotifyEvent = { type: "spotify" } & SpotifyState;
 
 /** Fan agent events out to line / exit listeners. */
@@ -164,14 +166,14 @@ function nativeBridge(handler: { postMessage(m: unknown): Promise<unknown> }): B
   const call = <T,>(method: string, params: Record<string, unknown> = {}) => handler.postMessage({ method, params }) as Promise<T>;
   const listeners: Listener[] = [];
   const hub = agentHub();
-  const settings: (() => void)[] = [];
+  const menu: Record<UiEvent["type"], (() => void)[]> = { openSettings: [], addSong: [] };
   const spotifyListeners: ((s: SpotifyState) => void)[] = [];
   (window as unknown as { __kotone: unknown }).__kotone = {
     emit: (e: PlayerEvent | AgentEvent | UiEvent | SpotifyEvent) =>
       e.type === "agent" || e.type === "agentExit"
         ? hub.dispatch(e)
-        : e.type === "openSettings"
-          ? settings.forEach((f) => f())
+        : e.type === "openSettings" || e.type === "addSong"
+          ? menu[e.type].forEach((f) => f())
           : e.type === "spotify"
             ? spotifyListeners.forEach((f) => f(e))
             : listeners.forEach((l) => l(e)),
@@ -197,7 +199,8 @@ function nativeBridge(handler: { postMessage(m: unknown): Promise<unknown> }): B
     },
     linkSpotify: async (songId, uri) => void (await call("library.linkSpotify", { songId, uri })),
     openURL: (url) => void call("app.openURL", { url }),
-    onOpenSettings: (cb) => void settings.push(cb),
+    onOpenSettings: (cb) => void menu.openSettings.push(cb),
+    onAddSong: (cb) => void menu.addSong.push(cb),
     setLanguage: (lang) => void call("app.setLanguage", { lang }),
     async listSongs() {
       // `links` holds audio picked in the app, including for bundled demo songs
@@ -288,6 +291,7 @@ function webBridge(): Bridge {
     linkSpotify: async () => {},
     openURL: (url) => void window.open(url, "_blank"),
     onOpenSettings: () => {},
+    onAddSong: () => {},
     setLanguage: () => {},
     async listSongs() {
       let library: SongRecord[] = [];

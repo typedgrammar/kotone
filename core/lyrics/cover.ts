@@ -89,10 +89,15 @@ export async function findCover(http: Http, want: CoverWant): Promise<Cover | nu
   finders.push(["itunes", () => fromItunes(http, want)], ["netease", () => fromNeteaseSearch(http, want)]);
   for (const [from, find] of finders) {
     const url = await find().catch(() => null);
-    if (!url) continue;
-    const r = await http({ url }).catch(() => null);
-    const type = r && r.status === 200 ? imageType(r.body) : null;
-    if (type) return { bytes: r!.body, type, from };
+    const cover = url ? await downloadCover(http, url, from) : null;
+    if (cover) return cover;
   }
   return null;
+}
+
+/** An image already chosen (a Spotify track's art, say); null unless it really is one. */
+export async function downloadCover(http: Http, url: string, from: string): Promise<Cover | null> {
+  const r = await http({ url }).catch(() => null);
+  const type = r && r.status === 200 ? imageType(r.body) : null;
+  return type ? { bytes: r!.body, type, from } : null;
 }
