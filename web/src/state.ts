@@ -58,6 +58,8 @@ export const app = createRoot(() => {
     codexPath: "",
     /** UI language; "auto" follows the system */
     lang: "auto" as "auto" | "zh" | "en",
+    /** Width of the line breakdown panel, px */
+    breakdownWidth: 420,
   });
   const [favorites, setFavorites] = createStore<Favorites>({ version: 1, lines: [] });
 

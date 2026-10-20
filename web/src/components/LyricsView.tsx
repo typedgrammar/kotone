@@ -1,5 +1,4 @@
-import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
-import type { LineAnalysis } from "../../../core/analyze.ts";
+import { createEffect, createMemo, For, on, Show } from "solid-js";
 import { rubyFor } from "../../../core/furigana.ts";
 import { analysisOf } from "../../../core/library.ts";
 import type { Line, Song } from "../../../core/types.ts";
@@ -8,7 +7,7 @@ import { agent } from "../agent.ts";
 import { t } from "../i18n.ts";
 import { AgentNotice, AnnotateAction } from "./AgentStrip.tsx";
 import { IconPause, IconPlay, IconStar } from "./icons.tsx";
-import { LineDetail } from "./LineDetail.tsx";
+import { LinePanel } from "./LinePanel.tsx";
 import { JaLine, Ruby } from "./Text.tsx";
 import { revealLine } from "../reveal.ts";
 import { link } from "../ui.ts";
@@ -24,13 +23,16 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
     return hit?.id ?? null;
   });
 
-  // follow the playing line unless the reader has a breakdown open
+  // follow the playing line (the breakdown sits beside the lyrics, so it never hides it)
   createEffect(
     on(active, (id) => {
-      if (id && app.playing() && !app.expanded())
-        revealLine(id, "center", true);
+      if (id && app.playing()) revealLine(id, "center", true);
     }),
   );
+  const opened = () => {
+    const id = app.expanded();
+    return id && props.song.lines.some((l) => l.id === id) ? id : null;
+  };
 
   const annotated = () => props.song.lines.filter((l) => l.tokens?.length).length;
 
@@ -40,12 +42,13 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
   // data-nofuri / data-nozh: the furigana and translation toggles, read by the lines below
   return (
     <div
-      class="group/lyrics flex h-full flex-col data-nofuri:[&_rt]:hidden"
+      class="group/lyrics relative flex h-full flex-col data-nofuri:[&_rt]:hidden"
       data-nofuri={app.settings.furigana ? undefined : ""}
       data-nozh={app.settings.translation ? undefined : ""}
     >
-      {/* the header stays put; only the lines scroll, fading out as they reach it */}
-      <header class="relative z-3 flex flex-none items-end justify-between gap-4 px-10 pt-8.5 pb-1.5">
+      {/* the header stays put; only the lines scroll, fading out as they reach it. Both keep to a
+          column on the left, so the breakdown panel opens over empty space and nothing reflows */}
+      <header class={`relative z-3 flex flex-none items-end justify-between gap-4 px-10 pt-8.5 pb-1.5 ${COLUMN}`}>
         <div>
           <h1 class="m-0 font-ja text-[28px]/[1.9] font-semibold tracking-[0.04em] [&_rt]:text-[11px] [&_rt]:font-medium">
             <Ruby segs={rubyFor(props.song.title, props.song.titleReading)} />
@@ -79,7 +82,7 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
       </header>
 
       <div data-lines-scroll class="min-h-0 flex-1 overflow-y-auto pt-3.5 pb-[35vh] [mask-image:linear-gradient(transparent,#000_28px)]">
-        <div class="px-6">
+        <div class={`px-6 ${COLUMN}`}>
           <For each={props.song.lines}>
             {(line) => <LyricLine song={props.song} line={line} active={active() === line.id} playable={props.playable} />}
           </For>
@@ -88,11 +91,14 @@ export function LyricsView(props: { song: Song; playable: boolean }) {
           </Show>
         </div>
       </div>
+      <Show when={opened()}>{(id) => <LinePanel song={props.song} lineId={id()} playable={props.playable} />}</Show>
     </div>
   );
 }
 
 const sep = "mx-1.5 text-fg-3";
+/** The lyrics' width: room for a long line at 21px, leaving the panel's default width free beside it */
+const COLUMN = "max-w-[568px]";
 
 function LyricLine(props: { song: Song; line: Line; active: boolean; playable: boolean }) {
   const analysis = createMemo(() => analysisOf(props.song, props.line));
@@ -124,7 +130,7 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
     <div id={`line-${props.line.id}`} class="relative my-0.5 scroll-mt-7 rounded-[14px]">
       <div
         data-line-row
-        class={`group/row grid grid-cols-[22px_minmax(0,1.3fr)_minmax(0,1fr)_28px] items-center gap-4.5 rounded-[14px] py-1.5 pr-2.5 pl-1 group-data-nozh/lyrics:grid-cols-[22px_minmax(0,1fr)_28px] ${
+        class={`group/row grid grid-cols-[22px_minmax(0,1fr)_28px] items-center gap-x-4.5 rounded-[14px] py-1.5 pr-2.5 pl-1 ${
           open() ? "bg-sel" : "hover:bg-hover"
         }`}
         onClick={() => app.setExpanded(open() ? null : props.line.id)}
@@ -146,12 +152,12 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
           <JaLine ja={props.line.ja} analysis={analysis()} />
         </div>
         <div
-          class={`font-zh text-[15px]/[1.6] transition-colors duration-200 group-data-nozh/lyrics:hidden ${props.active ? "text-fg" : "text-fg-2"}`}
+          class={`font-zh text-[15px]/[1.6] transition-colors duration-200 group-data-nozh/lyrics:hidden col-start-2 row-start-2 -mt-1 pb-1 ${props.active ? "text-fg" : "text-fg-2"}`}
         >
           {props.line.zh}
         </div>
         <button
-          class={`inline-grid size-6.5 place-items-center rounded-md transition-opacity duration-120 hover:bg-hover ${
+          class={`col-start-3 row-start-1 inline-grid size-6.5 place-items-center rounded-md transition-opacity duration-120 hover:bg-hover ${
             fav() ? "text-star" : "text-fg-2 opacity-0 group-hover/row:opacity-100 hover:text-fg"
           }`}
           title={t(fav() ? "line.unfav" : "line.fav")}
@@ -160,65 +166,6 @@ function LyricLine(props: { song: Song; line: Line; active: boolean; playable: b
           <IconStar filled={fav()} />
         </button>
       </div>
-      <Show when={open()}>
-        <Popover song={props.song} line={props.line} analysis={analysis()} />
-      </Show>
-    </div>
-  );
-}
-
-const GAP = 8;
-const MIN = 420;
-
-/** The breakdown floats over its neighbours instead of pushing them down: below the line when it
- *  fits in view, above it when there's more room there, otherwise below with the view nudged. */
-function Popover(props: { song: Song; line: Line; analysis: LineAnalysis }) {
-  let el!: HTMLDivElement;
-  const [above, setAbove] = createSignal(false);
-
-  onMount(() => {
-    const scroller = el.closest("[data-lines-scroll]")!;
-    const row = el.previousElementSibling!.getBoundingClientRect();
-    const view = scroller.getBoundingClientRect();
-    // the top edge fades out; don't count it as room
-    const top = view.top + 28;
-    // as tall as its content up to most of the view (the line itself stays visible above or below);
-    // room enough for a phrase's words even when the whole-line view is short
-    const cap = (view.bottom - top) * 0.85 - row.height;
-    const want = Math.min(cap, props.analysis.tokens.length ? Math.max(el.scrollHeight, MIN) : el.scrollHeight);
-    const below = view.bottom - row.bottom - 2 * GAP;
-    const over = row.top - top - 2 * GAP;
-    const flip = want > below && want <= over;
-    // no room either side: open below and nudge the view up just enough (scrolling the other
-    // way can run out at the top of the song; the popover itself always makes room below)
-    if (!flip && want > below) scroller.scrollBy({ top: want - below, behavior: "smooth" });
-    setAbove(flip);
-    el.style.maxHeight = `${want}px`;
-
-    // switching phrases may grow it but never shrinks it back, so the tab bar doesn't jump around
-    const grow = new ResizeObserver(() => (el.style.minHeight = `${el.offsetHeight}px`));
-    grow.observe(el);
-    onCleanup(() => grow.disconnect());
-
-    // a click anywhere else closes it (the player stays usable while reading)
-    const outside = (e: PointerEvent) => {
-      const t = e.target as Element;
-      if (!t.closest?.(`#line-${props.line.id}, [data-player], [data-modal]`)) app.setExpanded(null);
-    };
-    document.addEventListener("pointerdown", outside, true);
-    onCleanup(() => document.removeEventListener("pointerdown", outside, true));
-  });
-
-  return (
-    // z-2: under the song header
-    <div
-      ref={el}
-      data-popover
-      class={`absolute inset-x-0 z-2 flex flex-col overflow-hidden rounded-[14px] border border-line bg-elev shadow-[0_18px_50px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_18px_50px_rgba(0,0,0,0.5),0_2px_8px_rgba(0,0,0,0.3)] ${
-        above() ? "bottom-[calc(100%+8px)] animate-pop-in-above" : "top-[calc(100%+8px)] animate-pop-in"
-      }`}
-    >
-      <LineDetail song={props.song} line={props.line} analysis={props.analysis} />
     </div>
   );
 }

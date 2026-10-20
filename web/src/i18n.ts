@@ -57,6 +57,10 @@ const zh = {
   "detail.redoBusy": "Codex 正在标注，等这次结束再试",
   "detail.redoing": "Codex 正在重新标注这句…",
   "detail.redone": "已重新标注",
+  "panel.position": "第 {n} / {total} 行",
+  "panel.prev": "上一行（k）",
+  "panel.next": "下一行（j）",
+  "panel.close": "关闭（Esc）",
   "detail.undoRedo": "恢复原来的",
 
   // codex in the header
@@ -235,6 +239,10 @@ const en: Record<Key, string> = {
   "detail.redoBusy": "Codex is busy annotating; try again when it's done",
   "detail.redoing": "Codex is re-annotating this line…",
   "detail.redone": "Redone",
+  "panel.position": "Line {n} of {total}",
+  "panel.prev": "Previous line (k)",
+  "panel.next": "Next line (j)",
+  "panel.close": "Close (Esc)",
   "detail.undoRedo": "Restore the previous one",
 
   "agent.annotateSong": "Annotate song",

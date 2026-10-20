@@ -58,7 +58,7 @@ export function LineDetail(props: { song: Song; line: Line; analysis: LineAnalys
   });
 
   return (
-    <div class="flex min-h-0 flex-auto cursor-auto flex-col gap-3 px-3.5 pt-3 pb-3.5 select-text" onClick={(e) => e.stopPropagation()}>
+    <div class="flex min-h-0 flex-auto cursor-auto flex-col gap-3 px-3.5 pt-2 pb-3.5 select-text">
       <Show when={a().tokens.length} fallback={<Unannotated song={props.song} line={props.line} />}>
         {/* the line is the tab bar: it stays put; only what's below it scrolls */}
         <section class="flex-none rounded-xl bg-panel px-4.5 pt-2.5 pb-3">
@@ -147,8 +147,9 @@ function Whole(props: {
         <ul class="m-0 grid list-none gap-px p-0">
           <For each={a().chunks}>
             {(c) => (
+              // phrase and its Chinese on one line, the note under them
               <li
-                class={`grid cursor-pointer grid-cols-[8px_auto_auto_auto_minmax(0,1fr)_16px] items-baseline gap-2.5 rounded-lg px-2 py-[3px] text-[12.5px] [&>svg]:self-center [&>svg]:text-fg-3 ${chunkColor(c.index)} ${
+                class={`grid cursor-pointer grid-cols-[8px_auto_minmax(0,1fr)_16px] items-baseline gap-x-2.5 gap-y-0.5 rounded-lg px-2 py-1.5 text-[12.5px] [&>svg]:self-center [&>svg]:text-fg-3 ${chunkColor(c.index)} ${
                   props.hot === c.index ? "bg-hover [&>svg]:opacity-100" : "[&>svg]:opacity-0"
                 }`}
                 onMouseEnter={() => props.onHot(c.index)}
@@ -157,10 +158,14 @@ function Whole(props: {
               >
                 <span class="size-2 self-center rounded-full bg-(--cc)" />
                 <span class={plRole}>{c.chunk.role}</span>
-                <span class="font-ja text-[15px]/[normal] whitespace-nowrap">{c.chunk.ja}</span>
-                <span class="font-zh text-[14px]/[normal] whitespace-nowrap text-fg-2">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
-                <span class="leading-[1.6]">{c.chunk.note}</span>
+                <span class="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+                  <span class="font-ja text-[15px]/[normal]">{c.chunk.ja}</span>
+                  <span class="font-zh text-[14px]/[normal] text-fg-2">{c.zh.map(([s, e]) => props.line.zh!.slice(s, e)).join("…")}</span>
+                </span>
                 <IconArrow />
+                <Show when={c.chunk.note}>
+                  <span class="col-start-3 col-end-4 leading-[1.6]">{c.chunk.note}</span>
+                </Show>
               </li>
             )}
           </For>
@@ -207,7 +212,7 @@ function Phrase(props: {
       </Show>
       {/* words beside grammar when there's room for both */}
       <div
-        class={`grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${grammar().length ? "min-[981px]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}
+        class={`grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${grammar().length ? "@min-[640px]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}
       >
         <div>
           <h4 class={sectionLabel}>{t("detail.words")}</h4>

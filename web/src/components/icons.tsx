@@ -30,6 +30,9 @@ export const IconGear = () => (
   <Svg d="M8 10.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4ZM13.1 9.4l1 .8-1.2 2.1-1.3-.4a4.6 4.6 0 0 1-1.4.8l-.3 1.3H7.5l-.3-1.3a4.6 4.6 0 0 1-1.4-.8l-1.3.4-1.2-2.1 1-.8a4.7 4.7 0 0 1 0-1.6l-1-.9 1.2-2 1.3.4c.4-.4.9-.6 1.4-.8l.3-1.3h2.4l.3 1.3c.5.2 1 .4 1.4.8l1.3-.4 1.2 2-1 .9c.1.5.1 1.1 0 1.6Z" />
 );
 export const IconRedo = () => <Svg d="M13 8a5 5 0 1 1-1.6-3.7M13.2 2.6v2.9h-2.9" />;
+export const IconUp = () => <Svg d="M3.5 10 8 5.5l4.5 4.5" />;
+export const IconDown = () => <Svg d="M3.5 6 8 10.5 12.5 6" />;
+export const IconClose = () => <Svg d="M4 4l8 8M12 4l-8 8" />;
 export const IconArrow = () => <Svg d="M6 3.5L10.5 8 6 12.5" />;
 
 // sidebar

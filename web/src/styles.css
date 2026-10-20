@@ -85,6 +85,7 @@
   --animate-tab-in: fade-in 0.14s ease-out;
   --animate-pop-in: pop-in 0.14s ease-out;
   --animate-pop-in-above: pop-in-above 0.14s ease-out;
+  --animate-panel-in: panel-in 0.18s ease-out;
   --animate-meter: meter 0.9s ease-in-out infinite alternate;
   --animate-shimmer: shimmer 1.4s linear infinite;
   --animate-agent-pulse: agent-pulse 1.2s ease-in-out infinite;
@@ -104,6 +105,12 @@
     from {
       opacity: 0;
       transform: translateY(4px);
+    }
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
     }
   }
   @keyframes meter {
