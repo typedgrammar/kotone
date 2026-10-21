@@ -2,7 +2,7 @@
 // (promo/). The page gets `window.__kotoneTour` before it loads, so it hands the tour its state;
 // the script runs once the page is up and reports through `webkit.messageHandlers.tour`:
 // { mark } prints "MARK <unix seconds> <label>" (to line the recording up with the script),
-// { log } prints a line, { done } quits.
+// { log } prints a line, { window } prints "WINDOW <number>" (for screencapture -l), { done } quits.
 
 import AppKit
 import WebKit
@@ -24,6 +24,8 @@ final class Tour: NSObject, WKScriptMessageHandler {
       print(String(format: "MARK %.3f %@", Date().timeIntervalSince1970, mark))
     } else if let log = body["log"] as? String {
       print("LOG \(log)")
+    } else if body["window"] != nil {
+      print("WINDOW \(message.webView?.window?.windowNumber ?? 0)")
     }
     fflush(stdout)
     if body["done"] != nil { NSApp.terminate(nil) }

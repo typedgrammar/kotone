@@ -74,6 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     }
     window.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
+    // a tour's window is recorded and screenshotted: it should look like the active one
+    if launch.tour != nil, #available(macOS 14.0, *) { NSApp.activate() }
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

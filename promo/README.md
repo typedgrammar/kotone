@@ -51,6 +51,8 @@ node promo/make.mjs       # → promo/out/kotone-promo-bgm.mp4 (`yoasobi` for th
   `window.png` for the corner mask) and Spotify's audio (`audio.wav`). It prints when each
   file starts so the marks line up.
 - `card.swift` renders HTML to PNG: the title and end cards, the backdrop and the captions.
+- `shots.sh` (with `tour/shots.js`) takes the README's screenshots, of the bundled demo excerpt only,
+  framed on a backdrop, into `docs/screenshots/`.
 - `beats.mjs` measures a recorded song's tempo and beat; `bgm.swift` renders the BGM.
 - `make.mjs` cuts the takes by their marks, each clip fitted to whole beats:
   - Codex's run is sped up and labelled with how much.

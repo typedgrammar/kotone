@@ -2,7 +2,9 @@
   "name": "kotone",
   "version": "0.1.0",
   "private": true,
-  "description": "言音 — a minimal macOS lyrics player for learning Japanese through songs",
+  "description": "言音 — learn Japanese through music: a minimal macOS lyrics player",
+  "license": "MIT",
+  "repository": "github:typedgrammar/kotone",
   "type": "module",
   "bin": {
     "kotone": "./cli/kotone.ts"
