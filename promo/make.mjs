@@ -1,6 +1,6 @@
 // Cuts the promo from the recorded acts (promo/record.sh annotate, add, chorus, detail), in two
 // scores:
-//   node promo/make.mjs [yoasobi|bgm]...     (default: both)
+//   node promo/make.mjs [bgm|yoasobi]...     (default: bgm, the one in use)
 //
 // yoasobi: title over 夜に駆ける's pre-chorus → its chorus (lyrics, furigana, a line's breakdown)
 //   → adding 優しい彗星 → Codex annotating it, as the chorus runs on → one line of 優しい彗星 taken
@@ -114,7 +114,7 @@ const c4 = clip("detail", detail, [[detail.song(suisei(-1)), detail.song(suisei(
 const caption = (name, zh, en) => ({ name, zh, en });
 c1.captions = [
   [
-    caption("lyrics", "歌词跟着 Spotify 逐行走，注音和译文随时开关", "Lyrics follow Spotify line by line, with furigana and translation on demand"),
+    caption("lyrics", "歌词跟着音乐逐行走，注音和译文随时开关", "Lyrics follow the music line by line, with furigana and translation on demand"),
     0,
     c1.time(chorus.at("panel", -0.5)),
   ],
@@ -124,7 +124,7 @@ c1.captions = [
     c1.length,
   ],
 ];
-c2.captions = [[caption("add", "一次搜索加入新歌：Spotify 曲目，加上带时间轴的歌词", "Add a song in one search: the Spotify track and time-synced lyrics"), 0, c2.length]];
+c2.captions = [[caption("add", "一次搜索加入新歌：音乐、封面和带时间轴的歌词", "Add a song in one search: the music, its cover and time-synced lyrics"), 0, c2.length]];
 c3.captions = [
   [caption("codex", "用你自己的 Codex 标注整首歌：读音、分词、语法、翻译", "Your own Codex annotates the whole song: readings, words, grammar, translation"), 0, c3.length],
 ];
@@ -196,6 +196,15 @@ function bgm() {
 
 // ---- cards -------------------------------------------------------------------------------------------
 
+/** The size of build/Kotone.app, as Finder counts it */
+function bundleSize(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).reduce((sum, e) => {
+    const p = path.join(dir, e.name);
+    return sum + (e.isDirectory() ? bundleSize(p) : e.isFile() ? fs.statSync(p).size : 0);
+  }, 0);
+}
+const appSize = `${(bundleSize("build/Kotone.app") / 1e6).toFixed(1)} MB`;
+
 const font = `-apple-system, "SF Pro Display", "PingFang SC", sans-serif`;
 const mincho = `"Hiragino Mincho ProN", "Songti SC", serif`;
 const page = (body, css = "") => `<!doctype html><meta charset="utf-8"><style>
@@ -227,30 +236,34 @@ const cards = {
     `<div class="backdrop"></div><div class="center">
        <img src="icon.png">
        <div class="name"><span class="ja">言音</span><span class="en">Kotone</span></div>
-       <div class="tag">用喜欢的歌学日语</div>
-       <div class="tag-en">Learn Japanese from the songs you love</div>
+       <div class="tag">Learn Japanese through music</div>
+       <div class="tag-zh">用音乐学日语</div>
      </div>`,
     `img { width: 168px; height: 168px; margin-bottom: 30px; filter: drop-shadow(0 18px 40px rgba(0,0,0,.45)); }
      .name { display: flex; align-items: baseline; gap: 26px; }
      .ja { font: 600 92px/1.1 ${mincho}; letter-spacing: .08em; }
      .en { font: 300 58px/1.1 ${font}; letter-spacing: .06em; color: rgba(242,242,244,.8); }
-     .tag { margin-top: 34px; font: 500 34px/1.3 "PingFang SC", ${font}; letter-spacing: .12em; }
-     .tag-en { margin-top: 10px; font: 400 22px/1.3 ${font}; color: rgba(242,242,244,.6); letter-spacing: .02em; }`,
+     .tag { margin-top: 34px; font: 500 36px/1.3 ${font}; letter-spacing: .02em; }
+     .tag-zh { margin-top: 10px; font: 400 22px/1.3 "PingFang SC", ${font}; color: rgba(242,242,244,.6); letter-spacing: .12em; }`,
   ),
+  // the size of the app is the point it closes on
   end: page(
     `<div class="backdrop"></div><div class="center">
        <img src="icon.png">
        <div class="name"><span class="en">Kotone</span><span class="ja">言音</span></div>
-       <div class="meta">macOS <i>·</i> Spotify <i>·</i> Codex</div>
-       <div class="tag">边听边学 <i>·</i> Listen, and understand</div>
+       <div class="tag">Learn Japanese through music</div>
+       <div class="size"><b>${appSize}</b><span><span class="zh">原生 macOS App，不打包浏览器内核</span><span>A native macOS app, no browser bundled</span></span></div>
      </div>`,
-    `img { width: 132px; height: 132px; margin-bottom: 26px; filter: drop-shadow(0 16px 36px rgba(0,0,0,.45)); }
+    `img { width: 120px; height: 120px; margin-bottom: 24px; filter: drop-shadow(0 16px 36px rgba(0,0,0,.45)); }
      .name { display: flex; align-items: baseline; gap: 22px; }
-     .ja { font: 600 64px/1.1 ${mincho}; letter-spacing: .08em; color: rgba(242,242,244,.85); }
-     .en { font: 500 64px/1.1 ${font}; letter-spacing: .03em; }
-     .meta { margin-top: 26px; font: 500 24px/1.3 ${font}; letter-spacing: .08em; color: #b9b8fb; }
-     .tag { margin-top: 14px; font: 400 21px/1.3 "PingFang SC", ${font}; color: rgba(242,242,244,.6); }
-     i { font-style: normal; opacity: .5; margin: 0 6px; }`,
+     .ja { font: 600 60px/1.1 ${mincho}; letter-spacing: .08em; color: rgba(242,242,244,.85); }
+     .en { font: 500 60px/1.1 ${font}; letter-spacing: .03em; }
+     .tag { margin-top: 18px; font: 400 26px/1.3 ${font}; color: rgba(242,242,244,.7); letter-spacing: .02em; }
+     .size { margin-top: 38px; display: flex; align-items: center; gap: 20px; padding: 14px 26px; border-radius: 18px;
+       background: rgba(142,140,245,.10); border: 1px solid rgba(142,140,245,.28); }
+     .size b { font: 600 46px/1 ${font}; color: #c3c2fc; letter-spacing: -.01em; }
+     .size > span { display: grid; gap: 4px; text-align: left; font: 400 17px/1.3 ${font}; color: rgba(242,242,244,.62); }
+     .size .zh { font: 500 20px/1.3 "PingFang SC", ${font}; color: rgba(242,242,244,.9); }`,
   ),
   // while a window is captured, macOS draws a sharing badge where its traffic lights are: the
   // badge is painted out of the recording and the lights (14pt, as on screen) put back
@@ -383,7 +396,7 @@ function cut(name, score) {
   console.log(`✓ ${path.resolve(file)}`);
 }
 
-const wanted = process.argv.slice(2).length ? process.argv.slice(2) : ["yoasobi", "bgm"];
+const wanted = process.argv.slice(2).length ? process.argv.slice(2) : ["bgm"];
 renderCards();
 if (wanted.includes("bgm")) execFileSync(tool("bgm"), [`${OUT}/bgm.wav`], { stdio: "inherit" });
 for (const name of wanted) cut(name, { yoasobi, bgm }[name]());

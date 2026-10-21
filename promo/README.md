@@ -24,7 +24,7 @@ promo/record.sh annotate  # adds 優しい彗星 and has Codex annotate it (~1 m
 promo/record.sh add       # adding it again, briskly, in a throwaway library (~20 s)
 promo/record.sh chorus    # 夜に駆ける's chorus (~30 s)
 promo/record.sh detail    # one line of 優しい彗星 taken apart (~25 s)
-node promo/make.mjs       # → promo/out/kotone-promo-{yoasobi,bgm}.mp4
+node promo/make.mjs       # → promo/out/kotone-promo-bgm.mp4 (`yoasobi` for the other cut)
 ```
 
 ## What it needs
