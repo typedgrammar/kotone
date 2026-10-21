@@ -93,7 +93,9 @@ func start() async throws {
   var window: SCWindow?
   for _ in 0..<200 {
     let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
-    window = content.windows.first { $0.owningApplication?.processID == pid && $0.frame.width > 400 && $0.windowLayer == 0 }
+    // its main window (a tour floats it above the others, so not necessarily layer 0)
+    window = content.windows.filter { $0.owningApplication?.processID == pid && $0.frame.width > 400 }
+      .max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
     if window != nil { break }
     try await Task.sleep(nanoseconds: 100_000_000)
   }

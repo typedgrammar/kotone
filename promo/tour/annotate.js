@@ -1,6 +1,6 @@
-// Act 1, in Chinese: 夜に駆ける's chorus with the lyrics following along, furigana off and on,
-// one line's breakdown (saved, stepped, closed), then adding 優しい彗星 from one search and
-// having Codex annotate it. Times are seconds into the song.
+// Adding 優しい彗星 and having Codex annotate it, the take the edit's Codex clip comes from (it
+// also leaves the annotated song in promo/out/home for promo/tour/detail.js). It opens on
+// 夜に駆ける's chorus, from an earlier cut. Times are seconds into the song.
 
 act(async () => {
   const { app, agent } = kotone;

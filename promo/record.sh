@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Records the promo's two acts from the live app (see promo/README.md):
-#   promo/record.sh zh|detail
-# Each act runs build/Kotone.app on a library of its own (promo/out/home, started from your
-# library's 夜に駆ける on the first act) with promo/tour/<act>.js driving it, while promo/record
-# captures the window and Spotify's sound into promo/out/<act>/.
+# Records one act of the promo from the live app (see promo/README.md):
+#   promo/record.sh annotate|add|chorus|detail
+# Each act runs build/Kotone.app on a library of its own with promo/tour/<act>.js driving it,
+# while promo/record captures the window and Spotify's sound into promo/out/<act>/. annotate
+# starts promo/out/home afresh from your library's 夜に駆ける and leaves 優しい彗星 annotated
+# there for chorus and detail; add uses a throwaway copy (promo/out/home-add).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-ACT=${1:?zh or detail}
+ACT=${1:?annotate, add, chorus or detail}
 OUT=promo/out
 LIB="$HOME/Library/Application Support/Kotone"
 mkdir -p "$OUT/bin"
@@ -18,7 +19,8 @@ for tool in record card; do
 done
 
 HOME_DIR="$PWD/$OUT/home"
-if [ "$ACT" = zh ]; then
+[ "$ACT" = add ] && HOME_DIR="$PWD/$OUT/home-add"
+if [ "$ACT" = annotate ] || [ "$ACT" = add ]; then
   rm -rf "$HOME_DIR"
   mkdir -p "$HOME_DIR/songs"
   cp -R "$LIB/songs/yoru-ni-kakeru" "$HOME_DIR/songs/"
@@ -41,6 +43,13 @@ APP=$!
 caffeinate -d -i -w "$APP" &
 "$OUT/bin/record" "$APP" com.spotify.client "$OUT/$ACT" > "$OUT/$ACT/record.log" &
 REC=$!
+# no recording, no take
+for _ in $(seq 1 100); do grep -q RECORDING "$OUT/$ACT/record.log" && break; kill -0 "$REC" 2>/dev/null || break; sleep 0.2; done
+if ! grep -q RECORDING "$OUT/$ACT/record.log"; then
+  kill "$APP" 2>/dev/null || true
+  echo "promo/record didn't start: $(cat "$OUT/$ACT/record.log")" >&2
+  exit 1
+fi
 wait "$APP" || true
 kill -INT "$REC"
 wait "$REC" || true

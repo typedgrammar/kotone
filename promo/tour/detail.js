@@ -1,6 +1,8 @@
-// Act 2: inside one line of 優しい彗星 (annotated by Codex in act 1) while it plays. The Japanese
-// and Chinese matched phrase by phrase, a phrase's words, how its verbs conjugate, then its
-// grammar point in the outline. Times are seconds into the song.
+// Inside one line of 優しい彗星 (annotated by Codex in promo/tour/annotate.js) while it plays: the
+// Japanese and Chinese matched phrase by phrase, a phrase's words and how its verbs conjugate,
+// then its grammar point in the outline. On the beat: 90 BPM, a bar at 186.9 s (promo/beats.mjs).
+
+const SUISEI = { bpm: 90, at: 186.897 };
 
 act(async () => {
   const { app } = kotone;
@@ -9,45 +11,35 @@ act(async () => {
   app.openSong(song.id);
   app.setView("lyrics");
   await waitFor(() => $("#line-L37"), 10000, "lyrics");
-  showCursor(innerWidth - 120, innerHeight - 140);
+  showCursor(innerWidth * 0.5, innerHeight * 0.62);
+  const s = beats(SUISEI);
 
-  await app.seek(176, true);
-  await atSong(184);
+  await app.seek(178, true);
+  await atSong(s(-3));
   mark("start");
 
   // L37 (sung from 187.8): four phrases, two conjugated verbs, one grammar point
-  await atSong(186.2);
-  await click($("#line-L37 [data-line-row]"), { fx: 0.3 });
+  await clickOn(s(0), () => $("#line-L37 [data-line-row]"), { fx: 0.3, ms: 420 });
   mark("panel");
   const chunk = (i) => $(`[data-panel] section [data-chunk="${i}"]`);
-  await sleep(700);
-  for (const i of [0, 1, 2, 3]) {
-    await hover(chunk(i));
-    await sleep(650);
-  }
+  for (const i of [0, 1, 2, 3]) await hoverOn(s(2 + i), () => chunk(i), i ? 260 : 400);
   unhover();
 
   const verb = (i) => $(".cursor-pointer", chunk(i));
-  await click(verb(2));
+  await clickOn(s(6), () => verb(2), { ms: 300 });
   mark("word");
-  await sleep(2600);
-  showKeys("→");
-  key("ArrowRight");
-  await sleep(900);
-  await click(verb(3));
-  await sleep(2400);
+  await keyOn(s(9), "ArrowRight", "→");
+  await clickOn(s(10), () => verb(3), { ms: 320 });
 
   // the grammar point (は) sits inside the first phrase: its tab, the role label under it
-  await click($(":scope > span:last-child", chunk(0)));
+  await clickOn(s(12), () => $(":scope > span:last-child", chunk(0)), { ms: 360 });
   mark("grammar");
-  await sleep(600);
   // the grammar rows are the list items with an outline link
-  const point = await waitFor(() => $$("[data-panel] li").find((li) => $("button", li)), 3000, "grammar point");
-  await hover(point);
-  await sleep(1300);
-  await click($("button", point));
+  const point = () => $$("[data-panel] li").find((li) => $("button", li));
+  await hoverOn(s(13), point, 380);
+  await clickOn(s(15), () => $("button", point()), { ms: 380 });
   mark("outline");
-  await sleep(2600);
+  await atSong(s(19));
   mark("end");
   await pauseMusic();
   restoreSettings();

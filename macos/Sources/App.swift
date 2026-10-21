@@ -66,6 +66,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     } else {
       webView.load(URLRequest(url: URL(string: "kotone://app/index.html")!))
     }
+    // a covered window gets its timers and animation frames throttled: a tour stays on top, on
+    // every Space
+    if launch.tour != nil {
+      window.level = .floating
+      window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    }
     window.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
   }

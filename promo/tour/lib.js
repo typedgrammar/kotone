@@ -32,6 +32,34 @@ function songTime() {
 // start an act's timed steps several seconds past where it seeks to
 const atSong = (t) => waitFor(() => kotone.app.spotify.state === "playing" && songTime() >= t, 120000, `song time ${t}`);
 
+// ---- on the beat ---------------------------------------------------------------------------------
+
+/** The song seconds of beat n on a grid { bpm, at } (`at`: a beat, as promo/beats.mjs measures) */
+const beats = (grid) => (n) => grid.at + (n * 60) / grid.bpm;
+const resolve = (x) => (typeof x === "function" ? x() : x);
+
+/** Click so the press lands at song second t (the cursor sets off just in time) */
+async function clickOn(t, target, { ms = 320, ...opts } = {}) {
+  await atSong(t - ms / 1000 - 0.09);
+  await click(resolve(target), { ...opts, ms });
+}
+/** Click empty space at (x, y), landing at song second t */
+async function clickAtOn(t, x, y, ms = 320) {
+  await atSong(t - ms / 1000 - 0.09);
+  await clickAt(x, y, ms);
+}
+/** Arrive over an element at song second t */
+async function hoverOn(t, target, ms = 300) {
+  await atSong(t - ms / 1000);
+  await hover(resolve(target), ms);
+}
+/** Press a key at song second t, showing it as keycaps */
+async function keyOn(t, k, ...caps) {
+  await atSong(t);
+  if (caps.length) showKeys(...caps);
+  key(k);
+}
+
 // ---- the real pointer, kept out ------------------------------------------------------------------
 
 // whatever the real mouse rests on would show its hover state (a row's star, its play button) where
@@ -108,7 +136,8 @@ async function moveTo(target, ms) {
     const arc = Math.sin(Math.PI * e) * bend;
     place(from.x + (to.x - from.x) * e - arc * 0.3, from.y + (to.y - from.y) * e - arc);
     if (t >= 1) break;
-    await new Promise(requestAnimationFrame);
+    // not requestAnimationFrame: a window that's hidden for a moment would never get the next one
+    await sleep(8);
   }
 }
 
@@ -142,8 +171,8 @@ async function click(el, { fx = 0.5, fy = 0.5, ms } = {}) {
 
 /** Rest the cursor on an element, as hovering it would (mouseenter, which Solid listens for) */
 let hovered = null;
-async function hover(el) {
-  await moveTo(pointOf(el));
+async function hover(el, ms) {
+  await moveTo(pointOf(el), ms);
   unhover();
   el.dispatchEvent(new MouseEvent("mouseenter", { clientX: at.x, clientY: at.y }));
   hovered = el;
@@ -154,8 +183,8 @@ function unhover() {
 }
 
 /** Click empty space: whatever is under the point gets the pointer events */
-async function clickAt(x, y) {
-  await moveTo({ x, y });
+async function clickAt(x, y, ms) {
+  await moveTo({ x, y }, ms);
   await sleep(90);
   shield.style.pointerEvents = "none";
   const el = document.elementFromPoint(x, y);
