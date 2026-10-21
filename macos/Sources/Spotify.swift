@@ -116,8 +116,18 @@ final class Spotify {
       return command("play")
     }
     owned = uri
-    // a freshly started track needs a moment before it takes a position
-    let from = seconds.map { "\n  delay 0.4\n  set player position to \($0)" } ?? ""
+    // a freshly started track ignores a position until it has loaded: set it until it takes
+    let from = seconds.map {
+      """
+
+        repeat 16 times
+          delay 0.25
+          set player position to \($0)
+          delay 0.05
+          if player position >= \($0 - 1) then exit repeat
+        end repeat
+      """
+    } ?? ""
     whenRunning { self.command("play track \"\(uri)\"\(from)") }
   }
 

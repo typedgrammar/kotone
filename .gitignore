@@ -3,3 +3,4 @@ build/
 web/dist/
 .DS_Store
 *.log
+promo/out/

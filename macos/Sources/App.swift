@@ -17,7 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
   private(set) lazy var spotify = Spotify { [weak self] event in self?.emit(event) }
   let spotifySearch = SpotifySearch()
   private var bridge: Bridge!
-  private let snapshot = SnapshotOptions.parse()
+  private let launch = LaunchOptions.parse()
+  private var snapshot: LaunchOptions? { launch.snapshot == nil ? nil : launch }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.mainMenu = buildMenu()
@@ -26,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     config.setURLSchemeHandler(AssetHandler(root: webRoot(), library: library), forURLScheme: "kotone")
     bridge = Bridge(app: self)
     config.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "kotone")
+    if let tour = launch.tour { Tour.install(script: tour, in: config.userContentController) }
 
     webView = WKWebView(frame: .zero, configuration: config)
     webView.setValue(false, forKey: "drawsBackground") // let the vibrancy show through the sidebar
@@ -55,8 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     strip.autoresizingMask = [.width, .minYMargin]
     background.addSubview(strip)
 
-    if let size = snapshot?.size { window.setContentSize(size) } else { window.setFrameAutosaveName("Main") }
-    if let name = snapshot?.appearance { NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua) }
+    if let size = launch.size { window.setContentSize(size) } else { window.setFrameAutosaveName("Main") }
+    if let name = launch.appearance { NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua) }
     if window.frame.origin == .zero { window.center() }
 
     if let dev = ProcessInfo.processInfo.environment["KOTONE_DEV_URL"], let url = URL(string: dev) {
@@ -120,7 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + snapshot.delay) {
           webView.takeSnapshot(with: nil) { image, error in
             if let image, let tiff = image.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
-              try? png.write(to: URL(fileURLWithPath: snapshot.path))
+              try? png.write(to: URL(fileURLWithPath: snapshot.snapshot!))
             } else {
               FileHandle.standardError.write("snapshot failed: \(String(describing: error))\n".data(using: .utf8)!)
             }
@@ -237,21 +239,24 @@ final class AssetHandler: NSObject, WKURLSchemeHandler {
   func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
 }
 
-struct SnapshotOptions {
-  var path: String
+/// Launch flags for verification and recording: `--snapshot out.png [--js code] [--delay s]` renders
+/// once and quits; `--tour script.js` runs a scripted walkthrough in the live window (see promo/);
+/// `--size 1180x780` and `--appearance light|dark` go with either.
+struct LaunchOptions {
+  var snapshot: String?
   var js: String?
+  var tour: String?
   var size: NSSize?
   var delay: Double = 0.8
   var appearance: String?
 
-  static func parse() -> SnapshotOptions? {
+  static func parse() -> LaunchOptions {
     let args = CommandLine.arguments
     func value(_ flag: String) -> String? {
       guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
       return args[i + 1]
     }
-    guard let path = value("--snapshot") else { return nil }
-    var o = SnapshotOptions(path: path, js: value("--js"), appearance: value("--appearance"))
+    var o = LaunchOptions(snapshot: value("--snapshot"), js: value("--js"), tour: value("--tour"), appearance: value("--appearance"))
     if let s = value("--size")?.split(separator: "x").compactMap({ Double($0) }), s.count == 2 { o.size = NSSize(width: s[0], height: s[1]) }
     if let d = value("--delay").flatMap(Double.init) { o.delay = d }
     return o
