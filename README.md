@@ -8,7 +8,7 @@
 - **添加歌曲**（侧栏、资料库或 ⌘N）：搜索 Spotify 曲库，每首结果自动配上歌词（参考 [LDDC](https://github.com/chenmozhijin/LDDC)，从网易云音乐、QQ音乐、酷狗、LRCLIB 下载，优先带时间轴的日语原文，**不取平台译文**，中文翻译只由 agent 写），歌词、封面和 Spotify 曲目一起加入资料库，之后由 Spotify 在后台播放；也可以给已有的歌补全歌词和时间轴，已经标注过的句子原样保留
 - **在 App 里直接让 Codex 标注**：点歌名右侧的“标注整首歌”，走你自己的 ChatGPT 账号额度；每一句通过校验就立刻出现在歌词里，不用离开播放器
 - 校验是确定性的：App 和 `kotone` CLI 共用同一个检查器，会重新推导 agent 写下的每个读音、变形和中文对应，不一致就把报错交还给 agent 修正
-- **整个 App 只有 1 MB**（zip 后约 550 KB）：原生 macOS App，不打包浏览器内核；Swift 程序 377 KB、界面 276 KB，剩下 370 KB 是图标
+- **下载约 550 KB**：用系统 WebView，不打包浏览器内核
 
 ![拆解面板](docs/screenshots/breakdown.png)
 

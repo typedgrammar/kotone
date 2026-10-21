@@ -22,8 +22,8 @@ const OUT = "promo/out";
 const CARDS = `${OUT}/cards`;
 const W = 1920;
 const H = 1080;
-// the window on the backdrop, with the caption band below it
-const WIN = { x: 208, y: 28, w: 1504, h: 940 };
+// the window on the backdrop, with a caption band below it tall enough to read on a phone
+const WIN = { x: 240, y: 22, w: 1440, h: 900 };
 
 // the beat grids the tours were timed on (promo/tour/chorus.js, detail.js)
 const YORU = { bpm: 130, at: 75.113 }; // 夜に駆ける: the chorus's first downbeat
@@ -114,33 +114,33 @@ const c4 = clip("detail", detail, [[detail.song(suisei(-1)), detail.song(suisei(
 const caption = (name, zh, en) => ({ name, zh, en });
 c1.captions = [
   [
-    caption("lyrics", "歌词跟着音乐逐行走，注音和译文随时开关", "Lyrics follow the music line by line, with furigana and translation on demand"),
+    caption("lyrics", "歌词跟着音乐走，注音、译文随时开关", "Lyrics follow the music, furigana and translation on demand"),
     0,
     c1.time(chorus.at("panel", -0.5)),
   ],
   [
-    caption("breakdown", "点开任意一句：每个词的读音、意思和语法", "Open any line for every word’s reading, meaning and grammar"),
+    caption("breakdown", "点开一句，逐词拆解", "Open a line, word by word"),
     c1.time(chorus.at("panel", -0.5)),
     c1.length,
   ],
 ];
-c2.captions = [[caption("add", "一次搜索加入新歌：音乐、封面和带时间轴的歌词", "Add a song in one search: the music, its cover and time-synced lyrics"), 0, c2.length]];
+c2.captions = [[caption("add", "一次搜索，加入新歌", "Add a song in one search"), 0, c2.length]];
 c3.captions = [
-  [caption("codex", "用你自己的 Codex 标注整首歌：读音、分词、语法、翻译", "Your own Codex annotates the whole song: readings, words, grammar, translation"), 0, c3.length],
+  [caption("codex", "Codex 标注整首歌", "Codex annotates the whole song"), 0, c3.length],
 ];
 c4.captions = [
   [
-    caption("compare", "点开一句：日文和中文按短语一一对照", "Open a line: the Japanese and the Chinese, matched phrase by phrase"),
+    caption("compare", "日文和中文，按短语对照", "Japanese and Chinese, phrase by phrase"),
     0,
     c4.time(detail.at("word", -0.5)),
   ],
   [
-    caption("words", "点一个词：读音、词性、JLPT 级别，还有动词怎么变形", "Tap a word: its reading, part of speech, JLPT level, and how the verb conjugates"),
+    caption("words", "读音、词性、JLPT 级别、变形", "Reading, part of speech, JLPT level, conjugation"),
     c4.time(detail.at("word", -0.5)),
     c4.time(detail.at("grammar", -0.5)),
   ],
   [
-    caption("grammar", "语法点直通语法大纲，例句来自你资料库里的歌", "Grammar points open the outline, with examples from the songs in your library"),
+    caption("grammar", "语法点直通大纲，例句来自你的歌", "Grammar links to the outline, with examples from your songs"),
     c4.time(detail.at("grammar", -0.5)),
     c4.length,
   ],
@@ -196,14 +196,15 @@ function bgm() {
 
 // ---- cards -------------------------------------------------------------------------------------------
 
-/** The size of build/Kotone.app, as Finder counts it */
-function bundleSize(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).reduce((sum, e) => {
-    const p = path.join(dir, e.name);
-    return sum + (e.isDirectory() ? bundleSize(p) : e.isFile() ? fs.statSync(p).size : 0);
-  }, 0);
+/** What downloading build/Kotone.app takes: its zip, to the nearest 10 KB */
+function downloadSize() {
+  const zip = `${OUT}/Kotone.zip`;
+  execFileSync("ditto", ["-c", "-k", "--keepParent", "build/Kotone.app", zip]);
+  const kb = Math.round(fs.statSync(zip).size / 1e4) * 10;
+  fs.rmSync(zip);
+  return `${kb} KB`;
 }
-const appSize = `${(bundleSize("build/Kotone.app") / 1e6).toFixed(1)} MB`;
+const appSize = downloadSize();
 
 const font = `-apple-system, "SF Pro Display", "PingFang SC", sans-serif`;
 const mincho = `"Hiragino Mincho ProN", "Songti SC", serif`;
@@ -222,8 +223,8 @@ const captionPage = (c) =>
   page(
     `<div class="cap"><div class="zh">${c.zh}</div><div class="en">${c.en}</div></div>`,
     `.cap { position: fixed; left: 0; right: 0; top: ${WIN.y + WIN.h}px; bottom: 0; display: grid; place-content: center; justify-items: center; gap: 4px; }
-     .zh { font: 600 29px/1.25 "PingFang SC", ${font}; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
-     .en { font: 400 18.5px/1.3 ${font}; color: rgba(242,242,244,.62); letter-spacing: .01em; }`,
+     .zh { font: 600 44px/1.25 "PingFang SC", ${font}; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+     .en { font: 400 26px/1.3 ${font}; color: rgba(242,242,244,.66); letter-spacing: .01em; }`,
   );
 
 const cards = {
@@ -246,24 +247,23 @@ const cards = {
      .tag { margin-top: 34px; font: 500 36px/1.3 ${font}; letter-spacing: .02em; }
      .tag-zh { margin-top: 10px; font: 400 22px/1.3 "PingFang SC", ${font}; color: rgba(242,242,244,.6); letter-spacing: .12em; }`,
   ),
-  // the size of the app is the point it closes on
+  // closing on how small the download is, quietly
   end: page(
     `<div class="backdrop"></div><div class="center">
        <img src="icon.png">
        <div class="name"><span class="en">Kotone</span><span class="ja">言音</span></div>
        <div class="tag">Learn Japanese through music</div>
-       <div class="size"><b>${appSize}</b><span><span class="zh">原生 macOS App，不打包浏览器内核</span><span>A native macOS app, no browser bundled</span></span></div>
+       <div class="size"><b>${appSize}</b> · 不打包浏览器内核</div>
+       <div class="size-en">${appSize} · no browser bundled</div>
      </div>`,
     `img { width: 120px; height: 120px; margin-bottom: 24px; filter: drop-shadow(0 16px 36px rgba(0,0,0,.45)); }
      .name { display: flex; align-items: baseline; gap: 22px; }
      .ja { font: 600 60px/1.1 ${mincho}; letter-spacing: .08em; color: rgba(242,242,244,.85); }
      .en { font: 500 60px/1.1 ${font}; letter-spacing: .03em; }
-     .tag { margin-top: 18px; font: 400 26px/1.3 ${font}; color: rgba(242,242,244,.7); letter-spacing: .02em; }
-     .size { margin-top: 38px; display: flex; align-items: center; gap: 20px; padding: 14px 26px; border-radius: 18px;
-       background: rgba(142,140,245,.10); border: 1px solid rgba(142,140,245,.28); }
-     .size b { font: 600 46px/1 ${font}; color: #c3c2fc; letter-spacing: -.01em; }
-     .size > span { display: grid; gap: 4px; text-align: left; font: 400 17px/1.3 ${font}; color: rgba(242,242,244,.62); }
-     .size .zh { font: 500 20px/1.3 "PingFang SC", ${font}; color: rgba(242,242,244,.9); }`,
+     .tag { margin-top: 18px; font: 400 28px/1.3 ${font}; color: rgba(242,242,244,.75); letter-spacing: .02em; }
+     .size { margin-top: 44px; font: 400 22px/1.4 "PingFang SC", ${font}; color: rgba(242,242,244,.55); letter-spacing: .02em; }
+     .size b { font-weight: 500; color: #c3c2fc; }
+     .size-en { margin-top: 4px; font: 400 18px/1.4 ${font}; color: rgba(242,242,244,.4); }`,
   ),
   // while a window is captured, macOS draws a sharing badge where its traffic lights are: the
   // badge is painted out of the recording and the lights (14pt, as on screen) put back
@@ -276,9 +276,9 @@ const cards = {
   ),
   speed: page(
     `<div class="pill">Codex <b>×${Math.round(c3.speed)}</b></div>`,
-    `.pill { position: fixed; right: ${W - WIN.x - WIN.w}px; top: ${(WIN.y + WIN.h + H) / 2 - 18}px; padding: 8px 16px; border-radius: 999px;
+    `.pill { position: fixed; right: ${W - WIN.x - WIN.w}px; top: ${(WIN.y + WIN.h + H) / 2 - 22}px; padding: 9px 18px; border-radius: 999px;
        background: rgba(20,20,26,.78); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(10px);
-       font: 500 19px/1 ${font}; color: rgba(242,242,244,.85); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+       font: 500 24px/1 ${font}; color: rgba(242,242,244,.85); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
      b { color: #b9b8fb; font-weight: 600; margin-left: 4px; }`,
   ),
 };
