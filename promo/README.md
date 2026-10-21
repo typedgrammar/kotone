@@ -7,9 +7,8 @@ A ~57 s video of the real app with the real music:
 3. One line of 優しい彗星 opened in the breakdown panel: phrases matched across the Japanese and
    the Chinese, words and how the verbs conjugate, and a grammar point in the outline.
 
-Nothing is
-mocked: a script drives the live app while its window and Spotify's sound are recorded, and
-ffmpeg cuts the takes together.
+Nothing is mocked: a script drives the live app while its window and Spotify's sound are
+recorded, and ffmpeg cuts the takes together.
 
 ```sh
 ./macos/build.sh
