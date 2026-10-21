@@ -227,37 +227,6 @@ promo/     The promo video and the README's screenshots, made from the live app
 
 The CLI and the app share `core/analyze.ts`: an annotation that passes `check` renders in the app exactly the same way.
 
-## On typed-japanese's DSL
-
-In short: **it helps, but what's most valuable in it is verifying the semantics, not the syntax for writing them.**
-
-typed-japanese's annotate pipeline (tsc type checking, rebuilding the original sentence character by character, a structural audit, retries with diagnostics) brought reliability to 100% on the hard eval. What it really shows is that this loop turns an LLM's "looks right" into "computes right":
-
-1. the agent only declares the derivation;
-2. a deterministic checker recomputes the result;
-3. anything that doesn't match goes back to the agent to retry.
-
-Kotone's IR inherits that directly:
-
-- `lemma + class + steps` is the value-level version of `ConjugateVerb<V, Form>`: the checker re-derives the surface form and the reading, and reports any mismatch with the lyrics. A wrong word class (say, the godan 呼ぶ marked ichidan) shows up this way in almost every conjugation.
-- "Tokens must spell out the original line exactly" corresponds to "the last alias must resolve to the original sentence".
-- Grammar point ids are a closed set, like type names.
-
-TS types aren't used as the storage or writing format directly, because here:
-
-1. **Most of what the player needs isn't grammatical correctness.** It needs readings (furigana), meaning in context, phrase ↔ translation correspondence, timing and explanations. A TJ value is only its surface string; readings aren't in the type, so a JSON annotation alongside would still be needed.
-2. **Cost to consume.** Getting the structure out of TS means calling the TS Compiler API at runtime, as TypedTranslate does; in a player, that means bundling tsc.
-3. **Escape hatches.** `SuffixPart` and literals let a model get around the derivation, which is why annotate.ts accumulated twenty-odd hard rules and a structural audit. A closed enum plus a runtime checker turns many of them into hard constraints in code ("a verb must have a lemma", "steps must derive the form") rather than soft ones in a prompt.
-4. **Composition and readings.** The eval notes that Passive+Ta can't be chained (the ConjugateVerbChain proposal). Here `steps` is an array by nature, and it derives the kanji form and the kana reading together (来る → 来た/きた), so the furigana is verified too.
-5. **Readable errors.** Errors from deep conditional types don't point an agent to the fix directly. A runtime checker can say "`奪う(godan) +Te` derives 「奪って」, but the token says 「奪った」".
-
-The two are isomorphic and can complement each other.
-
-- Class names follow TJ's `godan` / `ichidan`, and step names follow TJ's ConjugationForm where possible (`Te` `Ta` `Masu` `Potential` `Passive`…).
-- One difference in meaning: TJ's `Nai`/`Potential` produce stems (話さ, 行け), while every step here produces a whole word (話さない, 行ける). It's shown to learners as is, and can chain further (話さない → 話さなかった).
-
-A natural next step is `kotone export --typed-japanese`, turning each line into a `Sentence<[...]>` for tsc to check a second time. The other way round, TJ's eval corpus could be converted into this IR to regression-test the conjugation engine.
-
 ## Copyright
 
 The repo contains only the few lines of 夜に駆ける (words and music by Ayase) used for the demo. Downloaded lyrics and covers belong to their owners and stay in your local library, for personal study; please don't commit lyrics from your library or distribute them. For local audio, use files you obtained legally.
