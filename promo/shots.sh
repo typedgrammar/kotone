@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The README's screenshots, docs/screenshots/*.png: the live app (build/Kotone.app) on the bundled
 # demo excerpt, set up by promo/tour/shots.js, captured with its real window frame and set on a
-# backdrop with room around it. The demo song's art is Kotone's icon, not the record's.
+# backdrop with room around it. The demo song shows its album art from your own library.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=promo/out
@@ -14,7 +14,9 @@ mkdir -p "$OUT/bin" "$RAW" docs/screenshots
 
 rm -rf "$HOME_DIR"
 mkdir -p "$HOME_DIR/songs/yoru-ni-kakeru"
-sips -s format png -Z 512 macos/AppIcon.icns --out "$HOME_DIR/songs/yoru-ni-kakeru/cover.png" >/dev/null
+cover="$HOME/Library/Application Support/Kotone/songs/yoru-ni-kakeru/cover.jpg"
+[ -f "$cover" ] || { echo "✗ add 夜に駆ける in Kotone first, for its cover: $cover" >&2; exit 1; }
+cp "$cover" "$HOME_DIR/songs/yoru-ni-kakeru/"
 # linked to its track, so the player bar isn't caught looking it up
 printf '{"spotify":{"yoru-ni-kakeru":"spotify:track:3dPtXHP0oXQ4HCWHsOA9js"}}' > "$HOME_DIR/state.json"
 cat promo/tour/lib.js promo/tour/shots.js > "$OUT/tour-shots.js"
