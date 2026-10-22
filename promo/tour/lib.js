@@ -95,8 +95,8 @@ Object.assign(ring.style, {
   height: "34px",
   margin: "-17px 0 0 -17px",
   borderRadius: "50%",
-  background: "rgba(142,140,245,.35)",
-  border: "2px solid rgba(142,140,245,.9)",
+  background: "rgba(143,177,232,.35)",
+  border: "2px solid rgba(143,177,232,.9)",
   opacity: "0",
 });
 let at = { x: 0, y: 0 };

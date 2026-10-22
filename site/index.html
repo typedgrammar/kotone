@@ -17,47 +17,54 @@
 <!-- the Japanese display face, for visitors without Hiragino Mincho -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;600&display=swap">
 <style>
+/* 藍 (Ai): indigo dye on paper, with a touch of vermilion */
 :root {
-  --bg: #fbfaf8;
-  --bg-2: #f4f2ee;
-  --card: #ffffff;
-  --text: #1d1d1f;
-  --text-2: #5f5f66;
-  --text-3: #9a9aa1;
-  --line: rgba(0, 0, 0, 0.08);
-  --accent: #5856d6;
-  --accent-soft: rgba(88, 86, 214, 0.1);
-  --glow-1: rgba(142, 140, 245, 0.32);
-  --glow-2: rgba(255, 176, 140, 0.28);
-  --glow-3: rgba(240, 120, 160, 0.16);
-  --shadow: 0 1px 0 var(--line), 0 24px 60px rgba(30, 20, 60, 0.12);
-  --c-orange: #d9480f;
-  --c-green: #2b8a3e;
-  --c-blue: #1971c2;
-  --c-purple: #9c36b5;
+  --bg: #f6f3ec;
+  --bg-2: #efebe2;
+  --card: #fffdf8;
+  --text: #1c2230;
+  --text-2: #5a6070;
+  --text-3: #9a9ca4;
+  --line: rgba(28, 34, 48, 0.1);
+  --accent: #2c4f86;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(44, 79, 134, 0.1);
+  --accent-shadow: rgba(44, 79, 134, 0.28);
+  --glow-1: rgba(120, 150, 200, 0.26);
+  --glow-2: rgba(214, 120, 90, 0.15);
+  --glow-3: rgba(200, 170, 120, 0.14);
+  --shadow: 0 1px 0 var(--line), 0 24px 60px rgba(20, 30, 60, 0.12);
+  --code-bg: #1b2333;
+  --c-orange: #c0492f;
+  --c-green: #3c7a52;
+  --c-blue: #2c6fb0;
+  --c-purple: #8a5a9e;
   --ja: "Hiragino Mincho ProN", "Noto Serif JP", "Yu Mincho", serif;
   --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121118;
-    --bg-2: #18171f;
-    --card: #1f1e27;
-    --text: #f2f2f4;
-    --text-2: #a7a6b0;
-    --text-3: #6f6e78;
-    --line: rgba(255, 255, 255, 0.09);
-    --accent: #9d9bf7;
-    --accent-soft: rgba(142, 140, 245, 0.16);
-    --glow-1: rgba(142, 140, 245, 0.28);
-    --glow-2: rgba(232, 163, 61, 0.12);
-    --glow-3: rgba(240, 120, 160, 0.12);
+    --bg: #0e131d;
+    --bg-2: #121925;
+    --card: #161d2a;
+    --text: #eef0f4;
+    --text-2: #a2a9b8;
+    --text-3: #646d80;
+    --line: rgba(255, 255, 255, 0.08);
+    --accent: #8fb1e8;
+    --on-accent: #0e131d;
+    --accent-soft: rgba(143, 177, 232, 0.16);
+    --accent-shadow: rgba(0, 0, 0, 0.4);
+    --glow-1: rgba(80, 120, 190, 0.26);
+    --glow-2: rgba(214, 120, 90, 0.1);
+    --glow-3: rgba(120, 150, 200, 0.1);
     --shadow: 0 1px 0 var(--line), 0 30px 70px rgba(0, 0, 0, 0.5);
-    --c-orange: #ff8a4c;
-    --c-green: #69db7c;
-    --c-blue: #74c0fc;
-    --c-purple: #e599f7;
+    --code-bg: #121926;
+    --c-orange: #f0886a;
+    --c-green: #7cc796;
+    --c-blue: #7fb6f0;
+    --c-purple: #c9a2e0;
   }
 }
 * { box-sizing: border-box; }
@@ -83,7 +90,7 @@ nav .links a:hover { color: var(--text); }
 .btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 999px; font-size: 16px; font-weight: 500;
   transition: transform .15s, box-shadow .15s, background .15s; white-space: nowrap; }
 .btn:hover { transform: translateY(-1px); }
-.btn.primary { background: var(--accent); color: #fff; box-shadow: 0 8px 24px rgba(88, 86, 214, .3); }
+.btn.primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 8px 24px var(--accent-shadow); }
 .btn.ghost { border: 1px solid var(--line); background: color-mix(in srgb, var(--card) 70%, transparent); backdrop-filter: blur(10px); }
 .btn.small { height: 36px; padding: 0 16px; font-size: 14px; }
 .btn svg { width: 18px; height: 18px; }

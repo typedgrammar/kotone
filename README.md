@@ -1,6 +1,8 @@
 # Kotone 言音
 
-**Learn Japanese through music.** A minimal macOS lyrics player for learning Japanese so you can **understand the songs you love**, built for Chinese-speaking learners at JLPT N5–N4.
+**Learn Japanese through music.** [kotone.typedgrammar.com](https://kotone.typedgrammar.com)
+
+A minimal macOS lyrics player for learning Japanese so you can **understand the songs you love**, built for Chinese-speaking learners at JLPT N5–N4.
 
 - Lyrics come with **furigana** and a **Chinese translation side by side**, and the current line lights up as the song plays.
 - Open any line for its breakdown, on demand:

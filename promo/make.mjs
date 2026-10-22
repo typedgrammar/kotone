@@ -212,10 +212,10 @@ const page = (body, css = "") => `<!doctype html><meta charset="utf-8"><style>
 html, body { margin: 0; width: ${W}px; height: ${H}px; overflow: hidden; background: transparent; -webkit-font-smoothing: antialiased; }
 body { font-family: ${font}; color: #f2f2f4; }
 .backdrop { position: fixed; inset: 0; background:
-  radial-gradient(1100px 700px at 12% 8%, rgba(142,140,245,.30), transparent 70%),
-  radial-gradient(900px 640px at 92% 96%, rgba(232,163,61,.16), transparent 70%),
-  radial-gradient(800px 600px at 80% 10%, rgba(233,94,126,.14), transparent 70%),
-  linear-gradient(160deg, #17161f, #101015 60%, #141218); }
+  radial-gradient(1100px 700px at 12% 8%, rgba(80,120,190,.30), transparent 70%),
+  radial-gradient(900px 640px at 92% 96%, rgba(214,120,90,.14), transparent 70%),
+  radial-gradient(800px 600px at 80% 10%, rgba(120,150,200,.12), transparent 70%),
+  linear-gradient(160deg, #141b28, #0e121a 60%, #10141c); }
 .center { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
 ${css}</style>${body}`;
 
@@ -262,7 +262,7 @@ const cards = {
      .en { font: 500 60px/1.1 ${font}; letter-spacing: .03em; }
      .tag { margin-top: 18px; font: 400 28px/1.3 ${font}; color: rgba(242,242,244,.75); letter-spacing: .02em; }
      .size { margin-top: 44px; font: 400 22px/1.4 "PingFang SC", ${font}; color: rgba(242,242,244,.55); letter-spacing: .02em; }
-     .size b { font-weight: 500; color: #c3c2fc; }
+     .size b { font-weight: 500; color: #8fb1e8; }
      .size-en { margin-top: 4px; font: 400 18px/1.4 ${font}; color: rgba(242,242,244,.4); }`,
   ),
   // while a window is captured, macOS draws a sharing badge where its traffic lights are: the
@@ -279,7 +279,7 @@ const cards = {
     `.pill { position: fixed; right: ${W - WIN.x - WIN.w}px; top: ${(WIN.y + WIN.h + H) / 2 - 22}px; padding: 9px 18px; border-radius: 999px;
        background: rgba(20,20,26,.78); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(10px);
        font: 500 24px/1 ${font}; color: rgba(242,242,244,.85); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
-     b { color: #b9b8fb; font-weight: 600; margin-left: 4px; }`,
+     b { color: #8fb1e8; font-weight: 600; margin-left: 4px; }`,
   ),
 };
 

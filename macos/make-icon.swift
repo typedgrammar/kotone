@@ -34,7 +34,8 @@ func render(_ size: CGFloat) -> Data {
   scale.scale(by: size / 1024)
   scale.concat()
   let tile = NSBezierPath(roundedRect: NSRect(x: 100, y: 100, width: 824, height: 824), xRadius: 186, yRadius: 186)
-  NSGradient(starting: NSColor(srgbRed: 0.35, green: 0.34, blue: 0.84, alpha: 1), ending: NSColor(srgbRed: 0.11, green: 0.10, blue: 0.29, alpha: 1))!
+  // 藍 (indigo dye): lighter at the horizon, deep night overhead
+  NSGradient(starting: NSColor(srgbRed: 0.24, green: 0.42, blue: 0.66, alpha: 1), ending: NSColor(srgbRed: 0.06, green: 0.10, blue: 0.20, alpha: 1))!
     .draw(in: tile, angle: 90)
   NSColor(srgbRed: 1, green: 0.91, blue: 0.64, alpha: 1).setFill()
   circle(720, 742, 50).fill()

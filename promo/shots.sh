@@ -41,8 +41,8 @@ done
 # each on a backdrop: light shots on a light one, dark on dark
 for png in "$RAW"/*.png; do
   name=$(basename "$png" .png)
-  case $name in *dark*) bg="radial-gradient(900px 600px at 10% 0%, rgba(142,140,245,.32), transparent 70%), radial-gradient(800px 600px at 100% 100%, rgba(232,163,61,.14), transparent 70%), linear-gradient(160deg, #1b1a24, #111116)" ;;
-    *) bg="radial-gradient(900px 600px at 10% 0%, rgba(142,140,245,.30), transparent 70%), radial-gradient(800px 600px at 100% 100%, rgba(255,186,140,.30), transparent 70%), linear-gradient(160deg, #f4f3fb, #fbf6f1)" ;;
+  case $name in *dark*) bg="radial-gradient(900px 600px at 10% 0%, rgba(80,120,190,.30), transparent 70%), radial-gradient(800px 600px at 100% 100%, rgba(214,120,90,.12), transparent 70%), linear-gradient(160deg, #141b28, #0c1018)" ;;
+    *) bg="radial-gradient(900px 600px at 10% 0%, rgba(120,150,200,.30), transparent 70%), radial-gradient(800px 600px at 100% 100%, rgba(214,120,90,.18), transparent 70%), linear-gradient(160deg, #f1efe8, #f8f4ec)" ;;
   esac
   cat > "$SHOTS/$name.html" <<HTML
 <!doctype html><meta charset="utf-8"><style>
