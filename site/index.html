@@ -72,7 +72,7 @@ html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 var(--ui); overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; height: auto; }
-.wrap { width: min(1120px, 100% - 40px); margin: 0 auto; }
+.wrap { width: min(1180px, 100% - 40px); margin: 0 auto; }
 
 /* the soft light Kotone's lyrics view sits in */
 .glow { position: absolute; inset: 0 0 auto; height: 1100px; z-index: -1; overflow: hidden; pointer-events: none;
@@ -85,7 +85,7 @@ nav { display: flex; align-items: center; gap: 28px; padding: 22px 0; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .01em; }
 .brand img { width: 30px; height: 30px; border-radius: 7px; }
 .brand .ja { font-family: var(--ja); font-weight: 600; color: var(--text-2); }
-nav .links { margin-left: auto; display: flex; gap: 26px; font-size: 15px; color: var(--text-2); }
+nav .links { margin-left: auto; display: flex; align-items: center; gap: 26px; font-size: 15px; color: var(--text-2); }
 nav .links a:hover { color: var(--text); }
 .btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 999px; font-size: 16px; font-weight: 500;
   transition: transform .15s, box-shadow .15s, background .15s; white-space: nowrap; }
@@ -95,16 +95,15 @@ nav .links a:hover { color: var(--text); }
 .btn.small { height: 36px; padding: 0 16px; font-size: 14px; }
 .btn svg { width: 18px; height: 18px; }
 
-.hero { text-align: center; padding: 64px 0 40px; }
-.hero h1 { margin: 0; font: 600 clamp(44px, 7.4vw, 84px)/1.08 var(--ui); letter-spacing: -.035em; }
-.hero h1 .ja { display: block; margin-bottom: 18px; font: 600 clamp(26px, 3.4vw, 36px)/1 var(--ja); letter-spacing: .12em; color: var(--text-2); }
-.hero h1 .ja rt { font: 500 .42em/1 var(--ui); letter-spacing: .1em; color: var(--text-3); }
-.hero p { max-width: 620px; margin: 26px auto 0; font-size: clamp(17px, 2vw, 20px); color: var(--text-2); }
-.hero .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 34px; }
-.hero .meta { margin-top: 16px; font-size: 14px; color: var(--text-3); }
+.hero { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 44px; align-items: center; padding: 20px 0 10px; }
+.hero .name { font: 600 26px/1 var(--ja); letter-spacing: .14em; color: var(--text-2); }
+.hero .name rt { font: 500 .42em/1 var(--ui); letter-spacing: .1em; color: var(--text-3); }
+.hero h1 { margin: 22px 0 0; font: 600 clamp(38px, 4.4vw, 58px)/1.06 var(--ui); letter-spacing: -.035em; }
+.hero p { margin: 20px 0 0; font-size: 18px; color: var(--text-2); }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.hero .meta { margin-top: 14px; font-size: 13.5px; color: var(--text-3); }
 .hero .meta b { color: var(--text-2); font-weight: 500; }
-.shot { margin: 56px auto 0; }
-.shot img { width: 100%; border-radius: 14px; }
+.hero .shot img { width: 100%; border-radius: 14px; }
 
 section { padding: 110px 0 0; }
 .feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; }
@@ -120,15 +119,61 @@ h2 { margin: 10px 0 18px; font: 600 clamp(30px, 3.6vw, 42px)/1.15 var(--ui); let
 .figure { border-radius: 18px; overflow: hidden; }
 .figure img { width: 100%; }
 
-/* a line, the way Kotone shows it: furigana above, Chinese below, phrases in color */
-.line-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 34px 34px 30px; }
-.line-card .ja { font: 500 clamp(26px, 3.2vw, 34px)/2.4 var(--ja); letter-spacing: .04em; }
-.line-card rt { font: 500 .4em/1 var(--ui); color: var(--text-3); letter-spacing: .05em; }
-.line-card .seg { padding-bottom: 4px; border-bottom: 3px solid var(--c); margin-right: 6px; }
-.line-card .zh { margin-top: 8px; font: 400 19px/1.8 "Songti SC", "Noto Serif SC", serif; color: var(--text-2); }
-.line-card .zh span { border-bottom: 2px solid var(--c); }
-.line-card .roles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-.line-card .roles span { font-size: 13px; padding: 3px 10px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+/* a line of lyrics you can take apart, the way Kotone's breakdown panel does */
+.demo { background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 18px 22px 22px; }
+.demo .bar { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-3); }
+.demo .pill { white-space: nowrap; flex: none; height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--text-2); font: 500 13px/1 var(--ui); cursor: pointer; }
+.demo .pill.on { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+.demo .bar .toggles { margin-left: auto; display: flex; gap: 6px; }
+.demo .hint { transition: opacity .3s; }
+.demo.touched .hint { opacity: 0; }
+.demo .line { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 4px; font: 500 clamp(26px, 3vw, 34px)/1 var(--ja); letter-spacing: .04em; }
+.demo .ch { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 6px 8px; border: 0; border-radius: 12px; background: none; color: inherit; font: inherit; cursor: pointer;
+  transition: background .15s, opacity .2s; }
+.demo .ch .w { padding-bottom: 6px; border-bottom: 3px solid var(--c); line-height: 1.5; }
+.demo .ch .role { font: 600 11.5px/1 var(--ui); letter-spacing: .04em; padding: 4px 9px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.demo .ch.hot, .demo .ch.sel { background: color-mix(in srgb, var(--c) 10%, transparent); }
+.demo .ch.sel .role { color: var(--card); background: var(--c); }
+.demo .line.dimmed .ch:not(.hot):not(.sel) { opacity: .38; }
+.demo rt { font: 500 .36em/1 var(--ui); color: var(--text-3); letter-spacing: .05em; }
+.demo.nofuri rt { visibility: hidden; }
+.demo .tok { border-radius: 4px; transition: background .15s; }
+.demo .tok.focus { background: var(--accent-soft); box-shadow: inset 0 -2px var(--accent); }
+.demo .zh { margin: 10px 6px 0; font: 400 19px/1.8 "Songti SC", "Noto Serif SC", serif; color: var(--text-2); }
+.demo .zh span { border-bottom: 2px solid var(--c); padding: 1px 0; transition: background .15s, color .15s; }
+.demo .zh span.hot { background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--text); }
+.demo.nozh .zh { visibility: hidden; }
+.demo .detail { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); min-height: 352px; font-size: 14.5px; animation: in .25s ease; }
+@keyframes in { from { opacity: 0; transform: translateY(4px); } }
+.demo .detail p { margin: 0 0 12px; color: var(--text); line-height: 1.7; }
+.demo .row { display: grid; grid-template-columns: 8px 48px auto 1fr 14px; align-items: baseline; gap: 10px; padding: 7px 10px; border-radius: 10px; cursor: pointer; }
+.demo .row:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.demo .row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); align-self: center; }
+.demo .row .r { font-size: 12px; color: var(--c); font-weight: 600; }
+.demo .row .j { font: 500 17px/1.4 var(--ja); }
+.demo .row .z { color: var(--text-2); font-family: "Songti SC", serif; }
+.demo .row .go { color: var(--text-3); opacity: 0; }
+.demo .row:hover .go { opacity: 1; }
+.demo h4 { margin: 14px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.demo .gp { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding: 7px 10px; border-radius: 10px; }
+.demo .gp:hover { background: var(--accent-soft); }
+.demo .lv { font: 600 11px/20px var(--ui); text-align: center; border-radius: 6px; color: var(--c-green); background: color-mix(in srgb, var(--c-green) 14%, transparent); height: 20px; }
+.demo .gp b { font: 600 15px/1.4 var(--ja); margin-right: 8px; }
+.demo .gp .z { color: var(--text-2); }
+.demo .gp .n { display: block; margin-top: 2px; color: var(--text-2); font-size: 13.5px; }
+.demo .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.demo .head .r { font: 600 12px/1 var(--ui); padding: 5px 10px; border-radius: 7px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); align-self: center; }
+.demo .head .j { font: 500 24px/1.3 var(--ja); }
+.demo .head .z { font: 400 17px/1.3 "Songti SC", serif; color: var(--text-2); }
+.demo .card { display: inline-block; min-width: 200px; max-width: 100%; margin-top: 4px; padding: 10px 16px 14px; border: 1.5px solid var(--accent); border-radius: 12px; }
+.demo .card .big { font: 500 26px/2 var(--ja); }
+.demo .card .meta { font-size: 12.5px; color: var(--text-2); display: flex; gap: 8px; }
+.demo .card .meta .lv { padding: 0 6px; }
+.demo .card .g { margin-top: 4px; font-size: 15px; }
+.demo .card .der { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 500 18px/1.9 var(--ja); }
+.demo .card .der .from { color: var(--text-2); }
+.demo .card .der .step { font: 600 11.5px/1 var(--ui); padding: 4px 7px; border-radius: 6px; color: var(--accent); background: var(--accent-soft); }
+.demo .card .rule { margin-top: 6px; font-size: 13px; color: var(--text-2); }
 
 /* the checker, at work */
 .check { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 26px 28px; font: 14.5px/1.9 var(--mono); }
@@ -165,7 +210,9 @@ footer .right { margin-left: auto; display: flex; gap: 22px; }
 
 @media (max-width: 820px) {
   nav .links a:not(.btn) { display: none; }
-  .hero { padding-top: 36px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 12px; }
+  .demo .hint { display: none; }
+  .demo { padding: 16px 14px 18px; }
   section { padding-top: 80px; }
   .feature, .feature.flip { grid-template-columns: 1fr; gap: 32px; }
   .feature.flip .text { order: 0; }
@@ -183,7 +230,7 @@ footer .right { margin-left: auto; display: flex; gap: 22px; }
   <nav>
     <a class="brand" href="./"><img src="icon.png" alt="">Kotone <span class="ja">言音</span></a>
     <div class="links">
-      <a href="#read">Features</a>
+      <a href="#try">Features</a>
       <a href="#codex">How it works</a>
       <a href="https://github.com/typedgrammar/kotone">GitHub</a>
       <a class="btn primary small" href="https://github.com/typedgrammar/kotone/releases/latest">Download</a>
@@ -191,19 +238,19 @@ footer .right { margin-left: auto; display: flex; gap: 22px; }
   </nav>
 
   <header class="hero">
-    <h1><span class="ja"><ruby>言<rt>こと</rt></ruby><ruby>音<rt>ね</rt></ruby></span>Learn Japanese<br>through music.</h1>
-    <p>Kotone is a tiny lyrics player for the Mac. The songs you love come with furigana and a Chinese translation side by side, and any line opens up into its phrases, its words and its grammar.</p>
-    <div class="actions">
-      <a class="btn primary" href="https://github.com/typedgrammar/kotone/releases/latest">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.19-1.54 2.67-.39 6.62 1.11 8.79.73 1.06 1.6 2.25 2.75 2.21 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.94-1.08 2.66-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.54ZM14.2 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.59-2.57 1.32-.57.65-1.06 1.69-.93 2.69.98.08 1.98-.5 2.59-1.23Z"/></svg>
-        Download for Mac
-      </a>
-      <a class="btn ghost" href="https://github.com/typedgrammar/kotone">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>
-        View on GitHub
-      </a>
+    <div class="intro">
+      <div class="name"><ruby>言<rt>こと</rt></ruby><ruby>音<rt>ね</rt></ruby></div>
+      <h1>Learn Japanese through music.</h1>
+      <p>A tiny lyrics player for the Mac. Every line comes with furigana and a Chinese translation, and opens up into its phrases, its words and its grammar.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/typedgrammar/kotone/releases/latest">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.19-1.54 2.670-.39 6.62 1.11 8.79.73 1.06 1.6 2.250 2.75 2.21 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.94-1.08 2.66-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.54ZM14.2 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.59-2.570 1.32-.57.65-1.06 1.69-.93 2.69.98.08 1.98-.5 2.59-1.23Z"/></svg>
+          Download for Mac
+        </a>
+        <a class="btn ghost" href="https://github.com/typedgrammar/kotone">View on GitHub</a>
+      </div>
+      <div class="meta"><b>Free and open source</b> · 550 KB · macOS 13+ on Apple silicon</div>
     </div>
-    <div class="meta"><b>Free and open source</b> · a 550 KB download · macOS 13+ on Apple silicon</div>
     <div class="shot">
       <picture>
         <source srcset="breakdown-dark.jpg" media="(prefers-color-scheme: dark)">
@@ -212,40 +259,33 @@ footer .right { margin-left: auto; display: flex; gap: 22px; }
     </div>
   </header>
 
-  <section id="read">
+  <section id="try">
     <div class="feature">
+      <div class="text">
+        <div class="eyebrow">Try it</div>
+        <h2>Every line, taken apart</h2>
+        <p>This is a line of 夜に駆ける the way Kotone shows it. Point at a phrase to find its Chinese, click it for its words, and turn the furigana or the translation off.</p>
+        <ul>
+          <li style="--dot: var(--c-green)"><span><b>Phrases matched to the Chinese</b>, color by color, even when one piece of Japanese wraps around the rest (から is 从…起).</span></li>
+          <li style="--dot: var(--c-blue)"><span><b>Each word's reading, part of speech and JLPT level</b>, and how it's conjugated from its dictionary form, one step at a time.</span></li>
+          <li style="--dot: var(--c-purple)"><span><b>The grammar points it uses</b>, with a note on how they work right here.</span></li>
+        </ul>
+      </div>
+      <div class="demo" id="demo">
+        <noscript><div class="line">初めて会った日から</div><div class="zh">从初次相遇的那天起</div></noscript>
+      </div>
+    </div>
+  </section>
+
+  <section id="read">
+    <div class="feature flip">
       <div class="text">
         <div class="eyebrow">Read along</div>
         <h2>Lyrics that follow the song</h2>
         <p>Each line lights up as it's sung, with its reading above it and its meaning beside it. Turn the furigana or the translation off when you're ready to go without.</p>
         <p>Kotone plays through the Spotify app on your Mac and never pulls it to the front: you stay in the lyrics. A song that isn't on Spotify can use an audio file of your own.</p>
       </div>
-      <div class="line-card" aria-label="A line of lyrics with furigana and its Chinese translation">
-        <div class="ja"><span class="seg" style="--c: var(--c-orange)"><ruby>初<rt>はじ</rt></ruby>めて</span><span class="seg" style="--c: var(--c-green)"><ruby>会<rt>あ</rt></ruby>った</span><span class="seg" style="--c: var(--c-blue)"><ruby>日<rt>ひ</rt></ruby></span><span class="seg" style="--c: var(--c-purple)">から</span></div>
-        <div class="zh"><span style="--c: var(--c-purple)">从</span><span style="--c: var(--c-orange)">初次</span><span style="--c: var(--c-green)">相遇的</span><span style="--c: var(--c-blue)">那天</span><span style="--c: var(--c-purple)">起</span></div>
-        <div class="roles">
-          <span style="--c: var(--c-orange)">初めて · 状语</span>
-          <span style="--c: var(--c-green)">会った · 定语</span>
-          <span style="--c: var(--c-blue)">日 · 中心语</span>
-          <span style="--c: var(--c-purple)">から · 起点</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="feature flip">
-      <div class="text">
-        <div class="eyebrow">Take it apart</div>
-        <h2>Every line, word by word</h2>
-        <p>Open any line to see how it's built, explained for that line, not in general.</p>
-        <ul>
-          <li style="--dot: var(--c-green)"><span><b>Phrases matched to the Chinese</b>, color by color, so you see which part means what.</span></li>
-          <li style="--dot: var(--c-blue)"><span><b>Each word's reading and part of speech</b>, its JLPT level, and how it's conjugated from its dictionary form, one step at a time.</span></li>
-          <li style="--dot: var(--c-purple)"><span><b>The grammar points it uses</b>, with a note on how they work right here.</span></li>
-        </ul>
-      </div>
-      <div class="figure"><img src="breakdown.jpg" width="2160" height="1440" loading="lazy" alt="The breakdown of 沈むように溶けてゆくように: its phrases, the word 溶けて and how it comes from 溶ける"></div>
+      <div class="figure"><img src="breakdown-dark.jpg" width="2160" height="1440" loading="lazy" alt="Kotone in dark mode, with 初めて会った日から taken apart"></div>
     </div>
   </section>
 
@@ -318,5 +358,134 @@ footer .right { margin-left: auto; display: flex; gap: 22px; }
     </div>
   </footer>
 </div>
+<script>
+// The line card: 初めて会った日から from the bundled excerpt (songs/yoru-ni-kakeru, L03),
+// annotated exactly as the app has it.
+(() => {
+  const line = {
+    note: "这一行只是时间起点，句子的谓语在下一行「奪った」。日语习惯先把时间、起点交代清楚。",
+    // the Chinese in order, each piece with the phrase it translates
+    zh: [["从", 3], ["初次", 0], ["相遇的", 1], ["那天", 2], ["起", 3]],
+    chunks: [
+      { role: "状语", c: "orange", zh: "初次", note: "副词，修饰会った。",
+        word: { ruby: [["初", "はじ"], ["めて"]], reading: "はじめて", pos: "副词", jlpt: "N5", gloss: "初次、第一次" } },
+      { role: "定语", c: "green", zh: "相遇的", note: "た形直接放在名词前作定语，表示已经发生的事：相遇（过）的。",
+        word: { ruby: [["会", "あ"], ["った"]], reading: "あった", pos: "动词 · 五段动词", jlpt: "N5", gloss: "相遇",
+          lemma: [["会", "あ"], ["う"]], step: "た形", rule: "た形（过去、完成）：五段动词：词尾「う」→「った」（促音便）" } },
+      { role: "中心语", c: "blue", zh: "那天",
+        word: { ruby: [["日", "ひ"]], reading: "ひ", pos: "名词", jlpt: "N5", gloss: "日子；那天" } },
+      { role: "起点", c: "purple", zh: "从…起", note: "から＝从……起，中文要拆成“从”和“起”包住前面的内容。",
+        word: { ruby: [["から"]], pos: "助词", gloss: "从……起" } },
+    ],
+    grammar: [
+      { title: "連用修飾", zh: "状语修饰", from: 0, to: 1, note: "副词初めて修饰动词会った：初次相遇。" },
+      { title: "連体修飾", zh: "定语从句", from: 0, to: 2, note: "「初めて会った」整体修饰「日」：日语里动词直接接名词，不需要“的”。" },
+      { title: "から（起点）", zh: "从……起", from: 2, to: 3, note: "接在时间名词后表示起点。" },
+    ],
+  };
+  const el = document.getElementById("demo");
+  if (!el) return;
+  const color = (c) => `var(--c-${c})`;
+  const ruby = (segs) => segs.map(([t, r]) => (r ? `<ruby>${t}<rt>${r}</rt></ruby>` : t)).join("");
+  const plain = (segs) => segs.map(([t]) => t).join("");
+
+  el.innerHTML = `
+    <div class="bar">
+      <button class="pill on" data-whole>全句</button>
+      <span class="hint">点一个短语，或把鼠标放上去</span>
+      <span class="toggles"><button class="pill on" data-toggle="nofuri">注音</button><button class="pill on" data-toggle="nozh">译文</button></span>
+    </div>
+    <div class="line">${line.chunks.map((ch, i) => `
+      <button class="ch" data-i="${i}" style="--c:${color(ch.c)}"><span class="w"><span class="tok" data-t="${i}">${ruby(ch.word.ruby)}</span></span><span class="role">${ch.role}</span></button>`).join("")}
+    </div>
+    <div class="zh">${line.zh.map(([t, i]) => `<span data-i="${i}" style="--c:${color(line.chunks[i].c)}">${t}</span>`).join("")}</div>
+    <div class="detail"></div>`;
+  const $$ = (sel) => [...el.querySelectorAll(sel)];
+  const detail = el.querySelector(".detail");
+  const lineEl = el.querySelector(".line");
+  let selected = null;
+
+  function hot(i) {
+    $$("[data-i]").forEach((n) => n.classList.toggle("hot", i !== null && n.dataset.i === String(i)));
+    lineEl.classList.toggle("dimmed", i !== null || selected !== null);
+  }
+  function focus(g) {
+    $$(".tok").forEach((t) => t.classList.toggle("focus", g !== null && +t.dataset.t >= g.from && +t.dataset.t <= g.to));
+  }
+  function whole() {
+    selected = null;
+    $$(".ch").forEach((c) => c.classList.remove("sel"));
+    el.querySelector("[data-whole]").classList.add("on");
+    lineEl.classList.remove("dimmed");
+    detail.innerHTML = `
+      <p>${line.note}</p>
+      ${line.chunks.map((ch, i) => `<div class="row" data-i="${i}" style="--c:${color(ch.c)}"><span class="dot"></span><span class="r">${ch.role}</span><span class="j">${plain(ch.word.ruby)}</span><span class="z">${ch.zh}</span><span class="go">›</span></div>`).join("")}
+      <h4>整句语法</h4>
+      ${line.grammar.map((g, k) => `<div class="gp" data-g="${k}"><span class="lv">N5</span><span><b>${g.title}</b><span class="z">${g.zh}</span><span class="n">${g.note}</span></span></div>`).join("")}`;
+    detail.style.animation = "none"; detail.offsetHeight; detail.style.animation = "";
+  }
+  function pick(i) {
+    selected = i;
+    const ch = line.chunks[i];
+    const w = ch.word;
+    $$(".ch").forEach((c) => c.classList.toggle("sel", c.dataset.i === String(i)));
+    el.querySelector("[data-whole]").classList.remove("on");
+    lineEl.classList.add("dimmed");
+    detail.innerHTML = `
+      <div class="head" style="--c:${color(ch.c)}"><span class="r">${ch.role}</span><span class="j">${plain(w.ruby)}</span><span class="z">${ch.zh}</span></div>
+      ${ch.note ? `<p>${ch.note}</p>` : ""}
+      <h4>词语</h4>
+      <div class="card">
+        <div class="big">${ruby(w.ruby)}</div>
+        <div class="meta">${w.reading ? `<span>${w.reading}</span>` : ""}<span>${w.pos}</span>${w.jlpt ? `<span class="lv">${w.jlpt}</span>` : ""}</div>
+        <div class="g">${w.gloss}</div>
+        ${w.lemma ? `<div class="der"><span class="from">${ruby(w.lemma)}</span><span class="step">${w.step}</span>→<span>${plain(w.ruby)}</span></div><div class="rule">${w.rule}</div>` : ""}
+      </div>`;
+    detail.style.animation = "none"; detail.offsetHeight; detail.style.animation = "";
+  }
+
+  // until someone reaches for it, the card shows what it does by itself
+  let demo = null;
+  const stopDemo = () => {
+    if (!demo) return;
+    clearInterval(demo);
+    demo = null;
+    hot(null);
+  };
+  const touch = () => {
+    el.classList.add("touched");
+    stopDemo();
+  };
+  el.addEventListener("pointerenter", touch);
+  el.addEventListener("focusin", touch);
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let n = 0;
+    new IntersectionObserver((entries, io) => {
+      if (!entries[0].isIntersecting || el.classList.contains("touched")) return;
+      io.disconnect();
+      demo = setInterval(() => hot(n++ % 4), 1300);
+    }, { threshold: 0.6 }).observe(el);
+  }
+
+  el.addEventListener("pointerover", (e) => {
+    const t = e.target.closest("[data-i]");
+    const g = e.target.closest("[data-g]");
+    hot(t ? +t.dataset.i : null);
+    focus(g ? line.grammar[+g.dataset.g] : null);
+  });
+  el.addEventListener("pointerleave", () => { hot(null); focus(null); });
+  el.addEventListener("click", (e) => {
+    const t = e.target.closest(".ch, .row");
+    if (t) return selected === +t.dataset.i && t.classList.contains("ch") ? whole() : pick(+t.dataset.i);
+    if (e.target.closest("[data-whole]")) return whole();
+    const tg = e.target.closest("[data-toggle]");
+    if (tg) {
+      el.classList.toggle(tg.dataset.toggle);
+      tg.classList.toggle("on");
+    }
+  });
+  whole();
+})();
+</script>
 </body>
 </html>
