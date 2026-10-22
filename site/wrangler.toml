@@ -1,0 +1,11 @@
+# kotone.typedgrammar.com: the landing page, as static assets on a Worker's custom domain (which
+# also creates its DNS record and certificate). Deploy with site/build.sh --deploy.
+name = "kotone-site"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./dist"
+
+[[routes]]
+pattern = "kotone.typedgrammar.com"
+custom_domain = true
